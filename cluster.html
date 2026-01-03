@@ -114,11 +114,6 @@
       line-height:1.5;
     }
 
-    .mapCardScroll{
-      max-height: calc(100vh - 160px);
-      overflow: auto;
-      padding-right: 6px;
-    }
   </style>
 </head>
 <body>
@@ -158,6 +153,11 @@
           <span class="chip">🧩 seatmap: <span class="mono" id="seatmapSource">—</span></span>
         </div>
 
+        <div class="row">
+            <span class="chip">🧱 zones: <span class="mono" id="zonesDbg">—</span></span>
+            <span class="chip">🧩 rows: <span class="mono" id="rowsDbg">—</span></span>
+        </div>
+
         <div style="height:14px;"></div>
         <div class="chip">🎓 Promo</div>
         <div class="barList" id="promoBars"></div>
@@ -174,7 +174,7 @@
       </div>
 
       <!-- RIGHT: map -->
-      <div class="card mapCardScroll">
+      <div class="card">
         <div class="tabs">
           <button class="tab active" id="tab-io">Io</button>
           <button class="tab" id="tab-disc">Discovery</button>
@@ -410,6 +410,18 @@
       console.log("session", session);
       console.log("campusId", campusId);
       console.log("cluster data", data);
+      
+      // сохранить последние данные для отладки
+        window.__lastCluster = data;
+
+        // вывести количество рядов по зонам
+        const zones = Array.isArray(data.zones) ? data.zones : [];
+        document.getElementById("zonesDbg").textContent =
+        zones.length ? zones.map(z => z.name).join(",") : "none";
+
+        document.getElementById("rowsDbg").textContent =
+        zones.length ? zones.map(z => `${z.name}:${z.rows?.length ?? 0}`).join(" | ") : "—";
+
       if (!data?.ok){
         document.getElementById("updated").textContent = "Bad response";
         setStatusMsg("Неожиданный ответ от /cluster.");
@@ -425,7 +437,7 @@
       renderBars(document.getElementById("promoBars"), data.stats?.promo);
       renderBars(document.getElementById("kindBars"), data.stats?.kind);
 
-      const zones = Array.isArray(data.zones) ? data.zones : [];
+    //   const zones = Array.isArray(data.zones) ? data.zones : [];
       const map = document.getElementById("mapZones");
       map.innerHTML = "";
 
