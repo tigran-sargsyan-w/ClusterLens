@@ -364,7 +364,7 @@
         document.getElementById("userModalName").textContent = user.displayname || user.login || "—";
         document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
         // document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "…";
-        document.getElementById("userModalLevel").textContent = (derived.level != null) ? trunc2(derived.level) : "—";
+        document.getElementById("userModalLevel").textContent = (user.level != null) ? trunc2(user.level) : "—";
 
         const img = document.getElementById("userModalAvatar");
         img.src = user.avatar_large || user.avatar || "";
