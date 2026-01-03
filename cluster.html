@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ClusterLens — Map</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --card:#121a26; --muted:#9aa4b2; --text:#e7edf5;
+      --line:#243044; --good:#2ecc71; --bad:#ff5c5c; --warn:#f5c542;
+      --chip:#1b2637;
+    }
+    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
+    .wrap{ max-width:1100px; margin:0 auto; padding:22px; }
+    .topbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px; }
+    .title{ font-size:18px; color:var(--muted); }
+    .btn{
+      background:transparent; border:1px solid var(--line); color:var(--text);
+      padding:10px 12px; border-radius:12px; cursor:pointer;
+    }
+    .btn:hover{ border-color:#3a4b6b; }
+
+    .grid{ display:grid; gap:14px; grid-template-columns: 360px 1fr; }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+
+    .card{
+      background:var(--card); border:1px solid var(--line);
+      border-radius:16px; padding:16px;
+      box-shadow: 0 6px 18px rgba(0,0,0,.25);
+    }
+
+    .chip{
+      display:inline-flex; gap:8px; align-items:center;
+      background:var(--chip); border:1px solid var(--line);
+      padding:8px 10px; border-radius:999px; color:var(--text);
+      font-size:13px;
+    }
+    .row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+    .muted{ color:var(--muted); }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+    /* Tabs */
+    .tabs{ display:flex; gap:10px; margin-bottom:12px; }
+    .tab{
+      padding:10px 12px; border-radius:12px; border:1px solid var(--line);
+      cursor:pointer; color:var(--muted); background:transparent;
+    }
+    .tab.active{ color:var(--text); border-color:#3a4b6b; background:rgba(255,255,255,.04); }
+
+    /* Map */
+    .mapWrap{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+    @media (max-width: 980px){ .mapWrap{ grid-template-columns: 1fr; } }
+
+    .zoneTitle{ font-size:42px; font-weight:750; text-align:center; opacity:.92; margin:10px 0 12px; }
+    .zone{ padding:10px; }
+    .zoneInner{ display:grid; gap:12px; }
+    .zoneRow{ display:grid; grid-template-columns: 1fr auto; align-items:center; gap:14px; }
+    .rowLabel{ font-size:28px; font-weight:700; opacity:.92; }
+
+    .seats{ display:flex; gap:8px; align-items:flex-end; }
+    .seatCol{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+
+    .seat{
+      width:44px; height:44px; border-radius:10px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,.06);
+      position:relative;
+      overflow:hidden;
+    }
+    .seat.free{ background: rgba(255,255,255,.03); }
+    .seat.occupied{ background: rgba(255,255,255,.10); }
+    .seat.blocked{ background: rgba(255,92,92,.08); border-color: rgba(255,92,92,.35); }
+
+    .seat img{
+      width:100%; height:100%; object-fit:cover;
+      transform: scale(1.02);
+      filter: saturate(1.05);
+    }
+    .seat .ban{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px;
+    }
+    .seatNum{ font-size:14px; color:var(--muted); }
+
+    .tooltip{
+      position:absolute; left:50%; bottom:52px; transform:translateX(-50%);
+      background:#0b0f17; border:1px solid var(--line);
+      padding:8px 10px; border-radius:12px; white-space:nowrap;
+      font-size:12px; color:var(--text);
+      box-shadow: 0 10px 24px rgba(0,0,0,.35);
+      opacity:0; pointer-events:none;
+      transition:opacity .12s ease;
+    }
+    .seat:hover .tooltip{ opacity:1; }
+
+    .statBig{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; }
+    .statValue{ font-size:48px; font-weight:800; line-height:1; }
+    .statLabel{ color:var(--muted); margin-bottom:8px; }
+    .barList{ display:grid; gap:10px; margin-top:12px; }
+    .barRow{ display:grid; grid-template-columns: 62px 1fr auto; gap:10px; align-items:center; }
+    .bar{ height:10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.03); overflow:hidden; }
+    .bar > i{ display:block; height:100%; width:0%; background:rgba(46,204,113,.35); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="title">ClusterLens (POC)</div>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="btn-login">Login</button>
+        <button class="btn" id="btn-logout">Logout</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: stats -->
+      <div class="card" id="stats">
+        <div class="chip">📊 Stats</div>
+        <div style="height:12px;"></div>
+
+        <div class="statBig">
+          <div>
+            <div class="statLabel">Occupied</div>
+            <div class="statValue" id="occ">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="statLabel">Free</div>
+            <div class="statValue" id="free">—</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <span class="chip">🚫 blocked: <span class="mono" id="blocked">—</span></span>
+          <span class="chip">🕒 updated: <span class="mono" id="updated">—</span></span>
+        </div>
+
+        <div style="height:14px;"></div>
+        <div class="chip">🎓 Promo</div>
+        <div class="barList" id="promoBars"></div>
+
+        <div style="height:14px;"></div>
+        <div class="chip">👤 Kind</div>
+        <div class="barList" id="kindBars"></div>
+
+        <div class="row" style="margin-top:14px;">
+          <button class="btn" id="btn-refresh">Refresh</button>
+        </div>
+
+        <div class="muted" style="margin-top:10px; font-size:13px;">
+          * “cadet / transcendent” добавим на втором этапе (понадобится добирать title/level точнее).
+        </div>
+      </div>
+
+      <!-- RIGHT: map -->
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" id="tab-io">Io</button>
+          <button class="tab" id="tab-disc">Discovery</button>
+        </div>
+
+        <div class="mapWrap" id="map">
+          <div class="zone">
+            <div class="zoneTitle">Z2</div>
+            <div class="zoneInner" id="zone-Z2"></div>
+          </div>
+          <div class="zone">
+            <div class="zoneTitle">Z1</div>
+            <div class="zoneInner" id="zone-Z1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
+    // TODO: поставь campus_id Lyon (узнаем через /v2/campus)
+    const CAMPUS_ID = "YOUR_LYON_CAMPUS_ID";
+
+    document.getElementById("btn-login").onclick = () => location.href = `${WORKER}/login`;
+    document.getElementById("btn-logout").onclick = () => { localStorage.removeItem("session"); location.href = "login.html"; };
+    document.getElementById("btn-refresh").onclick = () => load();
+
+    // (табами пока просто визуал — позже можно фильтровать зоны/этажи)
+    document.getElementById("tab-io").onclick = () => setTab(true);
+    document.getElementById("tab-disc").onclick = () => setTab(false);
+    function setTab(isIo){
+      document.getElementById("tab-io").classList.toggle("active", isIo);
+      document.getElementById("tab-disc").classList.toggle("active", !isIo);
+    }
+
+    function el(tag, attrs={}, ...children){
+      const node = document.createElement(tag);
+      for (const [k,v] of Object.entries(attrs)){
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else node.setAttribute(k, v);
+      }
+      for (const ch of children){
+        if (ch == null) continue;
+        node.appendChild(typeof ch === "string" ? document.createTextNode(ch) : ch);
+      }
+      return node;
+    }
+
+    function fmtTime(iso){
+      if (!iso) return "—";
+      const d = new Date(iso);
+      return isNaN(d) ? iso : d.toLocaleTimeString("ru-RU", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    }
+
+    function renderBars(container, obj){
+      container.innerHTML = "";
+      const entries = Object.entries(obj || {}).sort((a,b) => b[1]-a[1]);
+      if (!entries.length) {
+        container.appendChild(el("div", { class:"muted" }, "—"));
+        return;
+      }
+      const max = Math.max(...entries.map(e => e[1]));
+      for (const [k,v] of entries) {
+        const row = el("div", { class:"barRow" },
+          el("div", { class:"mono muted" }, k),
+          (() => {
+            const bar = el("div", { class:"bar" }, el("i"));
+            bar.firstChild.style.width = `${Math.round((v/max)*100)}%`;
+            return bar;
+          })(),
+          el("div", { class:"mono" }, String(v))
+        );
+        container.appendChild(row);
+      }
+    }
+
+    function renderZone(zone){
+      const root = document.getElementById(`zone-${zone.name}`);
+      root.innerHTML = "";
+
+      for (const r of zone.rows) {
+        const seats = el("div", { class:"seats" },
+          ...r.seats.map(s => {
+            const seat = el("div", { class:`seat ${s.status}` });
+
+            if (s.status === "occupied" && s.user?.avatar) {
+              seat.appendChild(el("img", { src:s.user.avatar, alt:s.user.login, referrerpolicy:"no-referrer" }));
+              seat.appendChild(el("div", { class:"tooltip" },
+                `${s.user.login} • promo ${s.user.pool_year || "—"}`
+              ));
+            } else if (s.status === "blocked") {
+              seat.appendChild(el("div", { class:"ban" }, "🚫"));
+            }
+
+            return el("div", { class:"seatCol" },
+              seat,
+              el("div", { class:"seatNum mono" }, String(s.post))
+            );
+          })
+        );
+
+        root.appendChild(
+          el("div", { class:"zoneRow" },
+            seats,
+            el("div", { class:"rowLabel" }, r.name)
+          )
+        );
+      }
+    }
+
+    async function load(){
+      const url = new URL(location.href);
+      const sessionFromUrl = url.searchParams.get("session");
+      const session = sessionFromUrl || localStorage.getItem("session");
+
+      if (!session){
+        document.getElementById("occ").textContent = "—";
+        document.getElementById("free").textContent = "—";
+        document.getElementById("blocked").textContent = "—";
+        document.getElementById("updated").textContent = "No session";
+        return;
+      }
+
+      localStorage.setItem("session", session);
+      if (sessionFromUrl){
+        url.searchParams.delete("session");
+        history.replaceState({}, "", url.toString());
+      }
+
+      const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(CAMPUS_ID)}`;
+      const res = await fetch(api);
+
+      if (!res.ok){
+        localStorage.removeItem("session");
+        document.getElementById("updated").textContent = "Session expired";
+        return;
+      }
+
+      const data = await res.json();
+      if (!data?.ok){
+        document.getElementById("updated").textContent = "Bad response";
+        return;
+      }
+
+      document.getElementById("occ").textContent = data.stats?.occupied ?? "—";
+      document.getElementById("free").textContent = data.stats?.free ?? "—";
+      document.getElementById("blocked").textContent = data.stats?.blocked ?? "—";
+      document.getElementById("updated").textContent = fmtTime(data.updated_at);
+
+      renderBars(document.getElementById("promoBars"), data.stats?.promo);
+      renderBars(document.getElementById("kindBars"), data.stats?.kind);
+
+      const zones = data.zones || [];
+      const z2 = zones.find(z => z.name === "Z2");
+      const z1 = zones.find(z => z.name === "Z1");
+      if (z2) renderZone(z2);
+      if (z1) renderZone(z1);
+    }
+
+    load();
+  </script>
+</body>
+</html>
