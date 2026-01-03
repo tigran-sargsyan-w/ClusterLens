@@ -176,7 +176,15 @@
   <script>
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
     // TODO: поставь campus_id Lyon (узнаем через /v2/campus)
-    const CAMPUS_ID = "YOUR_LYON_CAMPUS_ID";
+    // const CAMPUS_ID = "YOUR_LYON_CAMPUS_ID";
+    async function getPrimaryCampusId(session) {
+        const res = await fetch(`${WORKER}/session?session=${encodeURIComponent(session)}`);
+        if (!res.ok) throw new Error("Session invalid");
+        const data = await res.json();
+        const cu = data?.me?.campus_users || [];
+        const primary = cu.find(x => x?.is_primary);
+        return primary?.campus_id || cu[0]?.campus_id || null;
+    }
 
     document.getElementById("btn-login").onclick = () => location.href = `${WORKER}/login`;
     document.getElementById("btn-logout").onclick = () => { localStorage.removeItem("session"); location.href = "login.html"; };
@@ -285,15 +293,27 @@
         history.replaceState({}, "", url.toString());
       }
 
-      const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(CAMPUS_ID)}`;
+      const campusId = await getPrimaryCampusId(session);
+        if (!campusId) {
+        document.getElementById("updated").textContent = "No campus_id in /me";
+        return;
+        }
+
+      const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(campusId)}`;
       const res = await fetch(api);
 
-      if (!res.ok){
-        localStorage.removeItem("session");
-        document.getElementById("updated").textContent = "Session expired";
-        return;
-      }
+    //   if (!res.ok){
+    //     localStorage.removeItem("session");
+    //     document.getElementById("updated").textContent = "Session expired";
+    //     return;
+    //   }
 
+    if (!res.ok){
+        const text = await res.text().catch(() => "");
+        document.getElementById("updated").textContent = `API error ${res.status}`;
+        alert(`Worker /cluster error ${res.status}\n\n${text}`);
+        return;
+    }
       const data = await res.json();
       if (!data?.ok){
         document.getElementById("updated").textContent = "Bad response";
