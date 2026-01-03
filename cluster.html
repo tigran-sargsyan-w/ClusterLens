@@ -114,6 +114,97 @@
       line-height:1.5;
     }
 
+    .modalOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9999;
+}
+.modalOverlay.show{ display:flex; }
+
+.modal{
+  width: min(720px, 100%);
+  margin-top: 18px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  overflow: hidden;
+}
+
+.modalHeader{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: rgba(255,255,255,.02);
+  border-bottom: 1px solid var(--line);
+}
+
+.modalTitle{
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.modalClose{
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+.modalClose:hover{ border-color:#3a4b6b; }
+
+.modalBody{
+  display:flex;
+  gap: 16px;
+  padding: 16px;
+  align-items: center;
+}
+
+.modalAvatar{
+  width: 96px;
+  height: 96px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  overflow:hidden;
+  background: rgba(255,255,255,.04);
+  flex: 0 0 auto;
+}
+.modalAvatar img{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+
+.modalInfo h2{
+  margin: 0 0 6px;
+  font-size: 22px;
+}
+.modalInfo .sub{
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.pill{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--chip);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--text);
+}
+
+
   </style>
 </head>
 <body>
@@ -186,7 +277,70 @@
     </div>
   </div>
 
+<div class="modalOverlay" id="userModalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modalHeader">
+      <div class="modalTitle">Student</div>
+      <button class="modalClose" id="userModalClose">Close</button>
+    </div>
+
+    <div class="modalBody">
+      <div class="modalAvatar">
+        <img id="userModalAvatar" alt="" referrerpolicy="no-referrer" />
+      </div>
+
+      <div class="modalInfo">
+        <h2 id="userModalName">—</h2>
+        <div class="sub" id="userModalLogin">—</div>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <span class="pill">⭐ level: <span class="mono" id="userModalLevel">—</span></span>
+          <span class="pill">🎓 promo: <span class="mono" id="userModalPromo">—</span></span>
+          <span class="pill">👤 kind: <span class="mono" id="userModalKind">—</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
   <script>
+
+    // === User Modal ===
+    const modalOverlay = document.getElementById("userModalOverlay");
+    const modalCloseBtn = document.getElementById("userModalClose");
+
+    function openUserModal(user){
+    if (!user) return;
+
+    document.getElementById("userModalName").textContent = user.displayname || user.login || "—";
+    document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
+    document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "—";
+    document.getElementById("userModalPromo").textContent = user.pool_year || "—";
+    document.getElementById("userModalKind").textContent = user.kind || "—";
+
+    const img = document.getElementById("userModalAvatar");
+    img.src = user.avatar_large || user.avatar || "";
+    img.alt = user.displayname || user.login || "";
+
+    modalOverlay.classList.add("show");
+    modalOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeUserModal(){
+    modalOverlay.classList.remove("show");
+    modalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    modalCloseBtn.onclick = closeUserModal;
+    modalOverlay.addEventListener("click", (e) => {
+    if (e.target === modalOverlay) closeUserModal();
+    });
+    document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeUserModal();
+    });
+
+
     // === CONFIG ===
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev"; // <-- оставь свой
     const LOGIN_PAGE = "login.html";
@@ -311,6 +465,11 @@
               seat.appendChild(el("div", { class:"ban" }, "🚫"));
             }
 
+            if (s.status === "occupied") {
+            seat.style.cursor = "pointer";
+            seat.addEventListener("click", () => openUserModal(s.user));
+            }
+
             return el("div", { class:"seatCol" },
               seat,
               el("div", { class:"seatNum mono" }, String(s.post))
@@ -410,7 +569,7 @@
       console.log("session", session);
       console.log("campusId", campusId);
       console.log("cluster data", data);
-      
+
       // сохранить последние данные для отладки
         window.__lastCluster = data;
 
