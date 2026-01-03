@@ -19,6 +19,7 @@
       padding:10px 12px; border-radius:12px; cursor:pointer;
     }
     .btn:hover{ border-color:#3a4b6b; }
+    .btn:disabled{ opacity:.45; cursor:not-allowed; }
 
     .grid{ display:grid; gap:14px; grid-template-columns: 360px 1fr; }
     @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
@@ -101,6 +102,17 @@
     .barRow{ display:grid; grid-template-columns: 62px 1fr auto; gap:10px; align-items:center; }
     .bar{ height:10px; border-radius:999px; border:1px solid var(--line); background:rgba(255,255,255,.03); overflow:hidden; }
     .bar > i{ display:block; height:100%; width:0%; background:rgba(46,204,113,.35); }
+
+    .msg{
+      margin-top:12px;
+      padding:12px 14px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:rgba(255,255,255,.02);
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
   </style>
 </head>
 <body>
@@ -135,6 +147,11 @@
           <span class="chip">🕒 updated: <span class="mono" id="updated">—</span></span>
         </div>
 
+        <div class="row">
+          <span class="chip">🏫 campus_id: <span class="mono" id="campusId">—</span></span>
+          <span class="chip">🧩 seatmap: <span class="mono" id="seatmapSource">—</span></span>
+        </div>
+
         <div style="height:14px;"></div>
         <div class="chip">🎓 Promo</div>
         <div class="barList" id="promoBars"></div>
@@ -147,9 +164,7 @@
           <button class="btn" id="btn-refresh">Refresh</button>
         </div>
 
-        <div class="muted" style="margin-top:10px; font-size:13px;">
-          * “cadet / transcendent” добавим на втором этапе (понадобится добирать title/level точнее).
-        </div>
+        <div class="msg" id="statusMsg" style="display:none;"></div>
       </div>
 
       <!-- RIGHT: map -->
@@ -159,45 +174,35 @@
           <button class="tab" id="tab-disc">Discovery</button>
         </div>
 
-        <div class="mapWrap" id="map">
-          <div class="zone">
-            <div class="zoneTitle">Z2</div>
-            <div class="zoneInner" id="zone-Z2"></div>
-          </div>
-          <div class="zone">
-            <div class="zoneTitle">Z1</div>
-            <div class="zoneInner" id="zone-Z1"></div>
-          </div>
-        </div>
+        <!-- динамические зоны -->
+        <div class="mapWrap" id="mapZones"></div>
       </div>
     </div>
   </div>
 
   <script>
-    const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
-    // TODO: поставь campus_id Lyon (узнаем через /v2/campus)
-    // const CAMPUS_ID = "YOUR_LYON_CAMPUS_ID";
-    async function getPrimaryCampusId(session) {
-        const res = await fetch(`${WORKER}/session?session=${encodeURIComponent(session)}`);
-        if (!res.ok) throw new Error("Session invalid");
-        const data = await res.json();
-        const cu = data?.me?.campus_users || [];
-        const primary = cu.find(x => x?.is_primary);
-        return primary?.campus_id || cu[0]?.campus_id || null;
-    }
+    // === CONFIG ===
+    const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev"; // <-- оставь свой
+    const LOGIN_PAGE = "login.html";
+    const CLUSTER_PAGE = "cluster.html";
 
+    // Io: Z1,Z2 | Discovery: Z3,Z4
+    let activeTab = "io";
+
+    // === UI wiring ===
     document.getElementById("btn-login").onclick = () => location.href = `${WORKER}/login`;
-    document.getElementById("btn-logout").onclick = () => { localStorage.removeItem("session"); location.href = "login.html"; };
+    document.getElementById("btn-logout").onclick = () => { localStorage.removeItem("session"); location.href = LOGIN_PAGE; };
     document.getElementById("btn-refresh").onclick = () => load();
 
-    // (табами пока просто визуал — позже можно фильтровать зоны/этажи)
-    document.getElementById("tab-io").onclick = () => setTab(true);
-    document.getElementById("tab-disc").onclick = () => setTab(false);
+    document.getElementById("tab-io").onclick = () => { activeTab = "io"; setTab(true); load(); };
+    document.getElementById("tab-disc").onclick = () => { activeTab = "discovery"; setTab(false); load(); };
+
     function setTab(isIo){
       document.getElementById("tab-io").classList.toggle("active", isIo);
       document.getElementById("tab-disc").classList.toggle("active", !isIo);
     }
 
+    // === Helpers ===
     function el(tag, attrs={}, ...children){
       const node = document.createElement(tag);
       for (const [k,v] of Object.entries(attrs)){
@@ -240,9 +245,29 @@
       }
     }
 
-    function renderZone(zone){
-      const root = document.getElementById(`zone-${zone.name}`);
-      root.innerHTML = "";
+    function filterZonesByTab(zones){
+      const hasZ1 = zones.some(z => z.name === "Z1");
+      const hasZ2 = zones.some(z => z.name === "Z2");
+      const hasZ3 = zones.some(z => z.name === "Z3");
+      const hasZ4 = zones.some(z => z.name === "Z4");
+
+      // если это действительно схема Z1..Z4 — фильтруем красиво
+      if (hasZ1 || hasZ2 || hasZ3 || hasZ4) {
+        if (activeTab === "io") {
+          const z = zones.filter(x => x.name === "Z1" || x.name === "Z2");
+          return z.length ? z : zones;
+        } else {
+          const z = zones.filter(x => x.name === "Z3" || x.name === "Z4");
+          return z.length ? z : zones;
+        }
+      }
+
+      // иначе (неожиданные имена зон) — показываем всё
+      return zones;
+    }
+
+    function renderZoneInto(container, zone){
+      const inner = el("div", { class:"zoneInner" });
 
       for (const r of zone.rows) {
         const seats = el("div", { class:"seats" },
@@ -265,61 +290,101 @@
           })
         );
 
-        root.appendChild(
+        inner.appendChild(
           el("div", { class:"zoneRow" },
             seats,
             el("div", { class:"rowLabel" }, r.name)
           )
         );
       }
+
+      const zoneBox = el("div", { class:"zone" },
+        el("div", { class:"zoneTitle" }, zone.name),
+        inner
+      );
+
+      container.appendChild(zoneBox);
     }
 
-    async function load(){
+    function setStatusMsg(text){
+      const box = document.getElementById("statusMsg");
+      if (!text) { box.style.display = "none"; box.textContent = ""; return; }
+      box.style.display = "block";
+      box.textContent = text;
+    }
+
+    // === Session + Campus ===
+    async function getSessionIdFromUrlOrStorage(){
       const url = new URL(location.href);
       const sessionFromUrl = url.searchParams.get("session");
       const session = sessionFromUrl || localStorage.getItem("session");
 
-      if (!session){
-        document.getElementById("occ").textContent = "—";
-        document.getElementById("free").textContent = "—";
-        document.getElementById("blocked").textContent = "—";
-        document.getElementById("updated").textContent = "No session";
-        return;
-      }
+      if (!session) return null;
 
       localStorage.setItem("session", session);
       if (sessionFromUrl){
         url.searchParams.delete("session");
         history.replaceState({}, "", url.toString());
       }
+      return session;
+    }
 
-      const campusId = await getPrimaryCampusId(session);
-        if (!campusId) {
-        document.getElementById("updated").textContent = "No campus_id in /me";
+    async function getPrimaryCampusId(session){
+      const res = await fetch(`${WORKER}/session?session=${encodeURIComponent(session)}`);
+      if (!res.ok) throw new Error("Session invalid/expired");
+
+      const data = await res.json();
+      const cu = data?.me?.campus_users || [];
+      const primary = cu.find(x => x?.is_primary);
+      return primary?.campus_id || cu[0]?.campus_id || null;
+    }
+
+    // === Main load ===
+    async function load(){
+      setStatusMsg("");
+
+      const session = await getSessionIdFromUrlOrStorage();
+      if (!session){
+        document.getElementById("updated").textContent = "No session";
+        setStatusMsg("Нет session. Открой login.html и залогинься.");
         return;
-        }
+      }
+
+      let campusId;
+      try {
+        campusId = await getPrimaryCampusId(session);
+      } catch (e) {
+        document.getElementById("updated").textContent = "Session expired";
+        localStorage.removeItem("session");
+        setStatusMsg("Сессия истекла/недействительна. Нажми Login.");
+        return;
+      }
+
+      if (!campusId){
+        document.getElementById("updated").textContent = "No campus_id";
+        setStatusMsg("Не удалось определить campus_id из профиля (/v2/me).");
+        return;
+      }
+
+      document.getElementById("campusId").textContent = String(campusId);
 
       const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(campusId)}`;
+
       const res = await fetch(api);
-
-    //   if (!res.ok){
-    //     localStorage.removeItem("session");
-    //     document.getElementById("updated").textContent = "Session expired";
-    //     return;
-    //   }
-
-    if (!res.ok){
+      if (!res.ok){
         const text = await res.text().catch(() => "");
         document.getElementById("updated").textContent = `API error ${res.status}`;
-        alert(`Worker /cluster error ${res.status}\n\n${text}`);
+        setStatusMsg(`Worker /cluster вернул ошибку ${res.status}.\n${text}`);
         return;
-    }
+      }
+
       const data = await res.json();
       console.log("session", session);
       console.log("campusId", campusId);
       console.log("cluster data", data);
       if (!data?.ok){
         document.getElementById("updated").textContent = "Bad response";
+        setStatusMsg("Неожиданный ответ от /cluster.");
         return;
       }
 
@@ -327,17 +392,28 @@
       document.getElementById("free").textContent = data.stats?.free ?? "—";
       document.getElementById("blocked").textContent = data.stats?.blocked ?? "—";
       document.getElementById("updated").textContent = fmtTime(data.updated_at);
+      document.getElementById("seatmapSource").textContent = data.seatmap_source || "—";
 
       renderBars(document.getElementById("promoBars"), data.stats?.promo);
       renderBars(document.getElementById("kindBars"), data.stats?.kind);
 
-      const zones = data.zones || [];
-      const z2 = zones.find(z => z.name === "Z2");
-      const z1 = zones.find(z => z.name === "Z1");
-      if (z2) renderZone(z2);
-      if (z1) renderZone(z1);
+      const zones = Array.isArray(data.zones) ? data.zones : [];
+      const map = document.getElementById("mapZones");
+      map.innerHTML = "";
+
+      if (!zones.length){
+        setStatusMsg(
+          `Seatmap пустой (seatmap_source=${data.seatmap_source || "—"}).
+Скорее всего Worker ещё не обновлён на host-парсинг или в ответе нет host-координат.`
+        );
+        return;
+      }
+
+      const visible = filterZonesByTab(zones);
+      for (const z of visible) renderZoneInto(map, z);
     }
 
+    // старт
     load();
   </script>
 </body>
