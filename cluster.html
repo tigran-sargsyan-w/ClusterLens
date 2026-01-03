@@ -352,7 +352,6 @@
     // modalOverlay.setAttribute("aria-hidden", "false");
     // }
     async function openUserModal(user) {
-        console.log("openUserModal called with:", user);
         if (!user) return;
 
         // 1) мгновенно показываем то, что есть
@@ -378,16 +377,11 @@
 
         try {
             const url = `${WORKER}/user?session=${encodeURIComponent(session)}&id=${encodeURIComponent(user.id)}`;
-            console.log("fetch full user:", url);
 
             const r = await fetch(url);
 
-            console.log("user fetch status:", r.status);
-
             // читаем как текст, чтобы увидеть даже не-JSON ответы
             const text = await r.text();
-            console.log("user fetch raw body (first 300 chars):", text.slice(0, 300));
-
             let j;
             try {
             j = JSON.parse(text);
@@ -396,7 +390,6 @@
             return;
             }
 
-            console.log("j-response:", j);
             if (!j?.ok) return;
 
             const full = j.user;
@@ -661,9 +654,7 @@
       }
 
       const data = await res.json();
-      console.log("session", session);
-      console.log("campusId", campusId);
-      console.log("cluster data", data);
+    //   console.log("cluster data", data);
 
       // сохранить последние данные для отладки
         window.__lastCluster = data;
