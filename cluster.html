@@ -351,13 +351,20 @@
     // modalOverlay.classList.add("show");
     // modalOverlay.setAttribute("aria-hidden", "false");
     // }
+    function trunc2(v){
+        const n = Number(v);
+        if (!Number.isFinite(n)) return "—";
+        return (Math.floor(n * 100) / 100).toFixed(2);
+    }
+
     async function openUserModal(user) {
         if (!user) return;
 
         // 1) мгновенно показываем то, что есть
         document.getElementById("userModalName").textContent = user.displayname || user.login || "—";
         document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
-        document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "…";
+        // document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "…";
+        document.getElementById("userModalLevel").textContent = (derived.level != null) ? trunc2(derived.level) : "—";
 
         const img = document.getElementById("userModalAvatar");
         img.src = user.avatar_large || user.avatar || "";
