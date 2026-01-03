@@ -245,20 +245,42 @@
       }
     }
 
+    // function filterZonesByTab(zones){
+    //   const hasZ1 = zones.some(z => z.name === "Z1");
+    //   const hasZ2 = zones.some(z => z.name === "Z2");
+    //   const hasZ3 = zones.some(z => z.name === "Z3");
+    //   const hasZ4 = zones.some(z => z.name === "Z4");
+
+    //   // если это действительно схема Z1..Z4 — фильтруем красиво
+    //   if (hasZ1 || hasZ2 || hasZ3 || hasZ4) {
+    //     if (activeTab === "io") {
+    //       const z = zones.filter(x => x.name === "Z1" || x.name === "Z2");
+    //       return z.length ? z : zones;
+    //     } else {
+    //       const z = zones.filter(x => x.name === "Z3" || x.name === "Z4");
+    //       return z.length ? z : zones;
+    //     }
+    //   }
+
+    //   // иначе (неожиданные имена зон) — показываем всё
+    //   return zones;
+    // }
+
     function filterZonesByTab(zones){
       const hasZ1 = zones.some(z => z.name === "Z1");
       const hasZ2 = zones.some(z => z.name === "Z2");
       const hasZ3 = zones.some(z => z.name === "Z3");
       const hasZ4 = zones.some(z => z.name === "Z4");
+      const byName = new Map(zones.map(z => [z.name, z]));
 
       // если это действительно схема Z1..Z4 — фильтруем красиво
       if (hasZ1 || hasZ2 || hasZ3 || hasZ4) {
         if (activeTab === "io") {
-          const z = zones.filter(x => x.name === "Z1" || x.name === "Z2");
-          return z.length ? z : zones;
+          const ordered = ["Z2","Z1"].map(n => byName.get(n)).filter(Boolean);
+            return ordered.length ? ordered : zones;
         } else {
-          const z = zones.filter(x => x.name === "Z3" || x.name === "Z4");
-          return z.length ? z : zones;
+          const ordered = ["Z4","Z3"].map(n => byName.get(n)).filter(Boolean);
+            return ordered.length ? ordered : zones;
         }
       }
 
