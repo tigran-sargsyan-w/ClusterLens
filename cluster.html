@@ -351,7 +351,8 @@
     // modalOverlay.classList.add("show");
     // modalOverlay.setAttribute("aria-hidden", "false");
     // }
-    async function openUserModal(user){
+    async function openUserModal(user) {
+        console.log("openUserModal called with:", user);
         if (!user) return;
 
         // 1) мгновенно показываем то, что есть
@@ -366,30 +367,54 @@
         modalOverlay.classList.add("show");
 
         // 2) догружаем полный профиль
+        const session = new URLSearchParams(location.search).get("session");
+        console.log("session from URL =", session);
+
+        // если сессии нет — сразу покажем понятный лог
+        if (!session) {
+            console.warn("No session in URL. /user call skipped.");
+            document.getElementById("userModalLevel").textContent = "—";
+            return;
+        }
+
         try {
-            const session = new URLSearchParams(location.search).get("session");
-            const r = await fetch(`${API_BASE}/user?session=${encodeURIComponent(session)}&id=${encodeURIComponent(user.id)}`);
-            const j = await r.json();
-            console.log("j-response", j);
+            console.log("API_BASE =", API_BASE);
+            const url = `${API_BASE}/user?session=${encodeURIComponent(session)}&id=${encodeURIComponent(user.id)}`;
+            console.log("fetch full user:", url);
+
+            const r = await fetch(url);
+
+            console.log("user fetch status:", r.status);
+
+            // читаем как текст, чтобы увидеть даже не-JSON ответы
+            const text = await r.text();
+            console.log("user fetch raw body (first 300 chars):", text.slice(0, 300));
+
+            let j;
+            try {
+            j = JSON.parse(text);
+            } catch (e) {
+            console.error("Response is not JSON. Parse error:", e);
+            return;
+            }
+
+            console.log("j-response:", j);
             if (!j?.ok) return;
 
             const full = j.user;
             const derived = j.derived || {};
 
-            // уровень
             document.getElementById("userModalLevel").textContent =
             (derived.level42 != null) ? String(derived.level42) : "—";
 
-            // большой аватар
             img.src = derived.avatar_large || derived.avatar || img.src;
 
-            // можешь показать любые поля:
-            // full.email, full.wallet, full.cursus_users, full.projects_users, full.coalition, etc.
-            // (в зависимости от того, что реально приходит)
-            console.log("full user profile", full);
-        } catch {}
-    console.log("openUserModal", user);
+            console.log("full user profile:", full);
+        } catch (e) {
+            console.error("Failed to load full user:", e);
+        }
     }
+
 
 
 
