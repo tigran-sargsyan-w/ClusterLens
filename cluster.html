@@ -51,9 +51,9 @@
     /* Map */
     .mapWrap{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
 
-    /* Mobile responsive styles */
+    /* Mobile responsive styles - dynamic sizing via CSS custom properties */
     @media (max-width: 768px){
-      .wrap{ padding:12px; }
+      .wrap{ padding: var(--mobile-wrap-padding, 8px); }
       
       .grid{ 
         grid-template-columns: 1fr; 
@@ -68,44 +68,44 @@
         border-radius: 14px;
       }
       
-      /* Map wrapper - keep two columns but smaller */
+      /* Map wrapper - keep two columns */
       .mapWrap{
         grid-template-columns: 1fr 1fr;
-        gap: 4px;
+        gap: var(--map-gap, 4px);
       }
       
-      /* Zone styling for mobile - tiny */
+      /* Zone styling for mobile - dynamic */
       .zone{
-        padding: 1px;
+        padding: var(--zone-padding, 1px);
       }
       
       .zoneTitle{
-        font-size: 9px;
+        font-size: var(--zone-title-size, 9px);
         margin: 1px 0 2px;
       }
       
       .zoneRow{
-        gap: 2px;
-        padding-top: 2px;
-        padding-bottom: 2px;
+        gap: var(--row-gap, 2px);
+        padding-top: var(--row-padding, 2px);
+        padding-bottom: var(--row-padding, 2px);
         border-bottom-width: 0;
       }
       
       .rowLabel{
-        font-size: 6px;
-        min-width: 12px;
+        font-size: var(--row-label-size, 6px);
+        min-width: var(--row-label-width, 10px);
       }
       
-      /* Tiny seats on mobile */
+      /* Dynamic seats on mobile */
       .seat{
-        width: 8px;
-        height: 8px;
-        border-radius: 1px;
+        width: var(--seat-size, 8px);
+        height: var(--seat-size, 8px);
+        border-radius: var(--seat-radius, 1px);
         border-width: 0;
       }
       
       .seats{
-        gap: 1px;
+        gap: var(--seat-gap, 1px);
       }
       
       .seatNum{
@@ -116,8 +116,8 @@
         gap: 1px;
       }
       
-      .seatCol.up{ transform: translateY(-2px); }
-      .seatCol.down{ transform: translateY(2px); }
+      .seatCol.up{ transform: translateY(calc(var(--seat-size, 8px) * -0.25)); }
+      .seatCol.down{ transform: translateY(calc(var(--seat-size, 8px) * 0.25)); }
       
       /* Stats adjustments */
       .statValue{
@@ -171,52 +171,17 @@
       }
     }
     
-    /* Extra small screens */
+    /* Remove fixed sizes for extra small - will be calculated by JS */
+    /* Extra small screens - also use dynamic variables */
     @media (max-width: 480px){
-      .wrap{ padding: 4px; }
+      .wrap{ padding: var(--mobile-wrap-padding, 4px); }
       
       .mapWrap{
-        gap: 2px;
-      }
-      
-      .seat{
-        width: 6px;
-        height: 6px;
-        border-radius: 1px;
-      }
-      
-      .seats{
-        gap: 1px;
-      }
-      
-      .zoneTitle{
-        font-size: 7px;
-      }
-      
-      .rowLabel{
-        font-size: 5px;
-        min-width: 8px;
+        gap: var(--map-gap, 2px);
       }
       
       .statValue{
         font-size: 28px;
-      }
-      
-      .seatCol.up{ transform: translateY(-1px); }
-      .seatCol.down{ transform: translateY(1px); }
-      
-      .seatNum{
-        display: none;
-      }
-      
-      .zoneRow{
-        gap: 1px;
-        padding-top: 1px;
-        padding-bottom: 1px;
-      }
-      
-      .zone{
-        padding: 0;
       }
       
       .card{
@@ -611,6 +576,74 @@
 
 
   <script>
+
+    // === Dynamic map sizing for mobile ===
+    let cachedMapData = null; // will store zones data for recalculation
+    
+    function calculateMapSizes() {
+      if (window.innerWidth > 768) return; // only for mobile
+      
+      const zones = cachedMapData;
+      if (!zones || !zones.length) return;
+      
+      // Find max seats in any row across all zones
+      let maxSeatsInRow = 0;
+      for (const zone of zones) {
+        for (const row of zone.rows || []) {
+          maxSeatsInRow = Math.max(maxSeatsInRow, (row.seats || []).length);
+        }
+      }
+      
+      if (maxSeatsInRow === 0) return;
+      
+      // Available width calculation:
+      // screenWidth - padding*2 - mapGap - zonePadding*4 - rowLabelWidth*2
+      const screenWidth = window.innerWidth;
+      const wrapPadding = 8;
+      const cardPadding = 14;
+      const mapGap = 4;
+      const zonePadding = 2;
+      const rowLabelWidth = 12;
+      const seatGap = 1;
+      
+      // Total available for both zones side by side
+      const availableWidth = screenWidth - (wrapPadding * 2) - (cardPadding * 2);
+      
+      // Each zone gets half minus gap
+      const zoneWidth = (availableWidth - mapGap) / 2;
+      
+      // Available for seats in one row
+      const seatsAreaWidth = zoneWidth - (zonePadding * 2) - rowLabelWidth - 4;
+      
+      // Calculate seat size
+      const totalGaps = (maxSeatsInRow - 1) * seatGap;
+      const seatSize = Math.floor((seatsAreaWidth - totalGaps) / maxSeatsInRow);
+      
+      // Clamp between 4 and 20px
+      const clampedSize = Math.max(4, Math.min(20, seatSize));
+      
+      // Set CSS custom properties
+      const root = document.documentElement;
+      root.style.setProperty('--seat-size', `${clampedSize}px`);
+      root.style.setProperty('--seat-gap', `${Math.max(1, Math.floor(clampedSize / 8))}px`);
+      root.style.setProperty('--seat-radius', `${Math.max(1, Math.floor(clampedSize / 6))}px`);
+      root.style.setProperty('--map-gap', `${Math.max(2, Math.floor(clampedSize / 2))}px`);
+      root.style.setProperty('--zone-padding', `${Math.max(1, Math.floor(clampedSize / 4))}px`);
+      root.style.setProperty('--zone-title-size', `${Math.max(6, Math.floor(clampedSize * 1.2))}px`);
+      root.style.setProperty('--row-gap', `${Math.max(1, Math.floor(clampedSize / 4))}px`);
+      root.style.setProperty('--row-padding', `${Math.max(1, Math.floor(clampedSize / 4))}px`);
+      root.style.setProperty('--row-label-size', `${Math.max(5, Math.floor(clampedSize * 0.8))}px`);
+      root.style.setProperty('--row-label-width', `${Math.max(8, Math.floor(clampedSize * 1.5))}px`);
+      root.style.setProperty('--mobile-wrap-padding', `${Math.max(4, Math.floor(clampedSize / 2))}px`);
+      
+      console.log(`Map sizing: ${maxSeatsInRow} seats, screen ${screenWidth}px → seat ${clampedSize}px`);
+    }
+    
+    // Recalculate on resize
+    window.addEventListener('resize', () => {
+      clearTimeout(window._resizeTimer);
+      window._resizeTimer = setTimeout(calculateMapSizes, 100);
+    });
 
     // === User Modal ===
     const modalOverlay = document.getElementById("userModalOverlay");
@@ -1067,6 +1100,11 @@
       }
 
       const visible = filterZonesByTab(zones);
+      
+      // Cache data and calculate sizes for mobile
+      cachedMapData = visible;
+      calculateMapSizes();
+      
       for (const z of visible) renderZoneInto(map, z);
     }
 
