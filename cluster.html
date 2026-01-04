@@ -84,6 +84,27 @@
     }
     .seatNum{ font-size:14px; color:var(--muted); }
 
+    .clusterSeats{
+      display:flex;
+      gap:18px;
+      align-items:center;
+    }
+    .clusterCol{
+      display:grid;
+      grid-template-rows: auto auto;
+      gap:16px;
+    }
+    .clusterSlot{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:6px;
+      min-height:74px;
+    }
+    .clusterSlot.empty{
+      opacity:0.28;
+    }
+
     .tooltip{
       position:absolute; left:50%; bottom:52px; transform:translateX(-50%);
       background:#0b0f17; border:1px solid var(--line);
@@ -409,7 +430,7 @@
             profileLink.href = "#";
             profileLink.setAttribute("aria-disabled", "true");
         }
-        
+
         modalOverlay.classList.add("show");
 
         // 2) догружаем полный профиль
@@ -476,6 +497,17 @@
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev"; // <-- оставь свой
     const LOGIN_PAGE = "login.html";
     const CLUSTER_PAGE = "cluster.html";
+
+    const ROW_FIRST_POSITION = {
+      // примеры:
+      // "Z1:R1": "top",
+      // "Z1:R2": "bottom",
+      // "R3": "top",
+      "Z1:R1": "bottom",
+      "Z2:R1": "top",
+      "Z3:R1": "bottom",
+      "Z4:R1": "bottom",
+    };
 
     // Io: Z1,Z2 | Discovery: Z3,Z4
     let activeTab = "io";
@@ -578,34 +610,101 @@
       // иначе (неожиданные имена зон) — показываем всё
       return zones;
     }
+    
+    // here
+    function resolveRowStartPosition(zoneName, row){
+      const explicit =
+        row?.first_position ||
+        row?.firstPosition ||
+        row?.start_position ||
+        row?.startPosition;
+      if (explicit === "top" || explicit === "bottom") return explicit;
+
+      const key = `${zoneName}:${row.name}`;
+      return ROW_FIRST_POSITION[key] || ROW_FIRST_POSITION[row.name] || "top";
+    }
+
+    function buildClusterColumns(seats, startPosition){
+      const columns = [];
+      for (let i = 0; i < seats.length; i += 2){
+        const first = seats[i];
+        const second = seats[i + 1];
+        const column = { top: null, bottom: null };
+        if (startPosition === "bottom") {
+          column.bottom = first || null;
+          column.top = second || null;
+        } else {
+          column.top = first || null;
+          column.bottom = second || null;
+        }
+        columns.push(column);
+      }
+      return columns;
+    }
+
+    function renderSeatSlot(seat){
+      if (!seat) {
+        return el("div", { class:"clusterSlot empty" },
+          el("div", { class:"seat free" }),
+          el("div", { class:"seatNum mono" }, "—")
+        );
+      }
+
+      const seatBox = el("div", { class:`seat ${seat.status}` });
+      if (seat.status === "occupied" && seat.user?.avatar) {
+        seatBox.appendChild(el("img", { src:seat.user.avatar, alt:seat.user.login, referrerpolicy:"no-referrer" }));
+        seatBox.appendChild(el("div", { class:"tooltip" },
+          `${seat.user.login} • promo ${seat.user.pool_year || "—"}`
+        ));
+      } else if (seat.status === "blocked") {
+        seatBox.appendChild(el("div", { class:"ban" }, "🚫"));
+      }
+
+      if (seat.status === "occupied") {
+        seatBox.style.cursor = "pointer";
+        seatBox.addEventListener("click", () => openUserModal(seat.user));
+      }
+
+      return el("div", { class:"clusterSlot" },
+        seatBox,
+        el("div", { class:"seatNum mono" }, String(seat.post))
+      );
+    }
 
     function renderZoneInto(container, zone){
       const inner = el("div", { class:"zoneInner" });
 
       for (const r of zone.rows) {
-        const seats = el("div", { class:"seats" },
-          ...r.seats.map(s => {
-            const seat = el("div", { class:`seat ${s.status}` });
+        // const seats = el("div", { class:"seats" },
+        //   ...r.seats.map(s => {
+        //     const seat = el("div", { class:`seat ${s.status}` });
 
-            if (s.status === "occupied" && s.user?.avatar) {
-              seat.appendChild(el("img", { src:s.user.avatar, alt:s.user.login, referrerpolicy:"no-referrer" }));
-              seat.appendChild(el("div", { class:"tooltip" },
-                `${s.user.login} • promo ${s.user.pool_year || "—"}`
-              ));
-            } else if (s.status === "blocked") {
-              seat.appendChild(el("div", { class:"ban" }, "🚫"));
-            }
+        //     if (s.status === "occupied" && s.user?.avatar) {
+        //       seat.appendChild(el("img", { src:s.user.avatar, alt:s.user.login, referrerpolicy:"no-referrer" }));
+        //       seat.appendChild(el("div", { class:"tooltip" },
+        //         `${s.user.login} • promo ${s.user.pool_year || "—"}`
+        //       ));
+        //     } else if (s.status === "blocked") {
+        //       seat.appendChild(el("div", { class:"ban" }, "🚫"));
+        //     }
 
-            if (s.status === "occupied") {
-            seat.style.cursor = "pointer";
-            seat.addEventListener("click", () => openUserModal(s.user));
-            }
+        //     if (s.status === "occupied") {
+        //     seat.style.cursor = "pointer";
+        //     seat.addEventListener("click", () => openUserModal(s.user));
+        //     }
 
-            return el("div", { class:"seatCol" },
-              seat,
-              el("div", { class:"seatNum mono" }, String(s.post))
-            );
-          })
+        //     return el("div", { class:"seatCol" },
+        //       seat,
+        //       el("div", { class:"seatNum mono" }, String(s.post))
+        //     );
+        //   })
+        const startPosition = resolveRowStartPosition(zone.name, r);
+        const columns = buildClusterColumns(r.seats, startPosition);
+        const seats = el("div", { class:"clusterSeats" },
+          ...columns.map(col => el("div", { class:"clusterCol" },
+            renderSeatSlot(col.top),
+            renderSeatSlot(col.bottom)
+          ))
         );
 
         inner.appendChild(
