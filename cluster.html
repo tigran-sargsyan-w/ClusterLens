@@ -592,7 +592,20 @@
       return zones;
     }
 
-    function resolveRowStartPosition(zoneName, row){
+    function resolveZoneStartPosition(zone){
+      const zoneName = zone?.name;
+      if (!zoneName) return null;
+
+      const direct = ROW_FIRST_POSITION[zoneName];
+      if (direct === "top" || direct === "bottom") return direct;
+
+      const firstRowName = zone?.rows?.[0]?.name || "R1";
+      const key = `${zoneName}:${firstRowName}`;
+      const fallback = ROW_FIRST_POSITION[key];
+      return (fallback === "top" || fallback === "bottom") ? fallback : null;
+    }
+
+    function resolveRowStartPosition(zoneName, row, zoneDefault){
       const explicit =
         row?.first_position ||
         row?.firstPosition ||
@@ -602,16 +615,17 @@
 
       const key = `${zoneName}:${row.name}`;
       return ROW_FIRST_POSITION[key]
-        || ROW_FIRST_POSITION[zoneName]
+        || zoneDefault
         || ROW_FIRST_POSITION[row.name]
         || "top";
     }
 
     function renderZoneInto(container, zone){
       const inner = el("div", { class:"zoneInner" });
+      const zoneDefault = resolveZoneStartPosition(zone);
 
       for (const r of zone.rows) {
-        const startPosition = resolveRowStartPosition(zone.name, r);
+        const startPosition = resolveRowStartPosition(zone.name, r, zoneDefault);
         const seats = el("div", { class:"seats" },
           // ...r.seats.map(s => {
           ...r.seats.map((s, idx) => {
