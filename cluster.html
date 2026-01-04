@@ -556,7 +556,7 @@
           // Adjust container height to match scaled content
           const mapHeight = mapWrap.scrollHeight;
           mapWrap.style.marginBottom = `-${mapHeight * (1 - scale)}px`;
-          console.log(`Map scaled: ${mapWidth}px → ${availableWidth}px (scale: ${scale.toFixed(3)})`);
+          // console.log(`Map scaled: ${mapWidth}px → ${availableWidth}px (scale: ${scale.toFixed(3)})`);
         } else {
           mapWrap.style.transform = '';
           mapWrap.style.marginBottom = '';
@@ -648,7 +648,7 @@
 
         // 2) догружаем полный профиль
         const session = getSessionFromStorageOrUrl();
-        console.log("session from storage/url =", session);
+        // console.log("session from storage/url =", session);
 
         if (!session) {
             console.warn("No session found. /user call skipped.");
@@ -993,8 +993,8 @@
       }
 
       const data = await res.json();
-      console.log("cluster data", data);
-      console.log("campus", campus);
+      // console.log("cluster data", data);
+      // console.log("campus", campus);
 
       // сохранить последние данные для отладки
         window.__lastCluster = data;
