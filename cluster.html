@@ -65,6 +65,12 @@
         transform-origin: top center;
       }
     }
+    .statistics{ display:flex; flex-direction:column; }
+    @media (max-width: 600px){
+      .statistics{
+        transform-origin: top center;
+      }
+    }
 
     .zoneTitle{ font-size:42px; font-weight:750; text-align:center; opacity:.92; margin:10px 0 12px; }
     .zone{ padding:10px; }
@@ -280,6 +286,7 @@
     <div class="grid">
       <!-- LEFT: stats -->
       <div class="card" id="stats">
+      <div class="statistics">
         <div class="chip">📊 Stats</div>
         <div style="height:12px;"></div>
 
@@ -322,6 +329,7 @@
         </div>
 
         <div class="msg" id="statusMsg" style="display:none;"></div>
+      </div>
       </div>
 
       <!-- RIGHT: map -->
