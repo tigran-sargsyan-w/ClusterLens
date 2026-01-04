@@ -512,7 +512,7 @@
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
           <span class="pill">⭐ level: <span class="mono" id="userModalLevel">—</span></span>
           <span class="pill">🎓 promo: <span class="mono" id="userModalPromo">—</span></span>
-          <span class="pill">👤 kind: <span class="mono" id="userModalKind">—</span></span>
+          <span class="pill">🎖️ grade: <span class="mono" id="userModalKind">—</span></span>
         </div>
       </div>
     </div>
@@ -614,6 +614,13 @@
         return (Math.floor(n * 100) / 100).toFixed(2);
     }
 
+    // Get active grade from cursus_users (where end_at is null)
+    function getActiveGrade(cursusUsers) {
+        if (!Array.isArray(cursusUsers)) return "—";
+        const active = cursusUsers.find(c => c.end_at === null);
+        return active?.grade || "—";
+    }
+
     async function openUserModal(user) {
         if (!user) return;
 
@@ -622,7 +629,7 @@
         document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
         document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "—";
         document.getElementById("userModalPromo").textContent = user.pool_year || "—";
-        document.getElementById("userModalKind").textContent = user.kind || "—";
+        document.getElementById("userModalKind").textContent = "—"; // will be loaded from full profile
 
         const img = document.getElementById("userModalAvatar");
         img.src = user.avatar_large || user.avatar || "";
@@ -673,6 +680,9 @@
             // (derived.level42 != null) ? String(derived.level42) : "—";
             document.getElementById("userModalLevel").textContent =
             (derived.level42 != null) ? trunc2(derived.level42) : "—";
+
+            // Get grade from cursus_users where end_at is null
+            document.getElementById("userModalKind").textContent = getActiveGrade(full?.cursus_users);
 
             img.src = derived.avatar_large || derived.avatar || img.src;
 
