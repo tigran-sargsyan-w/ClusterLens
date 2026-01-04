@@ -65,10 +65,11 @@
         transform-origin: top center;
       }
     }
-    .statistics{ display:flex; flex-direction:column; }
+    .statistics{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
     @media (max-width: 600px){
       .statistics{
         transform-origin: top center;
+        max-width: 600px;
       }
     }
 
