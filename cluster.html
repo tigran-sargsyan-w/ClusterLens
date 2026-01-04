@@ -363,8 +363,7 @@
         // 1) мгновенно показываем то, что есть
         document.getElementById("userModalName").textContent = user.displayname || user.login || "—";
         document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
-        // document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "…";
-        document.getElementById("userModalLevel").textContent = (user.level != null) ? trunc2(user.level) : "—";
+        document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "—";
 
         const img = document.getElementById("userModalAvatar");
         img.src = user.avatar_large || user.avatar || "";
@@ -402,8 +401,10 @@
             const full = j.user;
             const derived = j.derived || {};
 
+            // document.getElementById("userModalLevel").textContent =
+            // (derived.level42 != null) ? String(derived.level42) : "—";
             document.getElementById("userModalLevel").textContent =
-            (derived.level42 != null) ? String(derived.level42) : "—";
+            (derived.level42 != null) ? trunc2(derived.level42) : "—";
 
             img.src = derived.avatar_large || derived.avatar || img.src;
 
