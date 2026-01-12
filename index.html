@@ -58,7 +58,7 @@
     <div class="topbar">
       <div class="title">ClusterLens (POC)</div>
       <div style="display:flex; gap:10px;">
-        <button class="btn" id="btn-login">Login</button>
+        <button class="btn" id="btn-login-primary">Login</button>
         <button class="btn" id="btn-dashboard">Cluster Map</button>
       </div>
     </div>
@@ -85,7 +85,7 @@
 
         
         <div class="row">
-          <button class="btn primary" id="btn-login">Login with 42</button>
+          <button class="btn primary" id="btn-login-secondary">Login with 42</button>
         </div>
 
         <div class="footer">
@@ -108,7 +108,8 @@
       document.getElementById("btn-dashboard").disabled = !hasSession();
     }
 
-    document.getElementById("btn-login").onclick = () => location.href = `${WORKER}/login`;
+    document.getElementById("btn-login-primary").onclick = () => location.href = `${WORKER}/login`;
+    document.getElementById("btn-login-secondary").onclick = () => location.href = `${WORKER}/login`;
 
     const goDashboard = () => location.href = CLUSTER_PAGE;
     document.getElementById("btn-dashboard").onclick = goDashboard;
