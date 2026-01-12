@@ -85,8 +85,7 @@
 
         
         <div class="row">
-          <button class="btn primary" id="btn-cta">Login with 42</button>
-          <button class="btn" id="btn-cta-dashboard">Open Map</button>
+          <button class="btn primary" id="btn-login">Login with 42</button>
         </div>
 
         <div class="footer">
@@ -98,7 +97,6 @@
 
   <script>
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
-    const LOGIN_PAGE = "login.html";
     const CLUSTER_PAGE = "cluster.html";
 
     function hasSession(){
@@ -108,15 +106,12 @@
     function refreshStatus(){
       document.getElementById("session-state").textContent = hasSession() ? "present" : "none";
       document.getElementById("btn-dashboard").disabled = !hasSession();
-      document.getElementById("btn-cta-dashboard").disabled = !hasSession();
     }
 
-    document.getElementById("btn-login").onclick = () => location.href = LOGIN_PAGE;
-    document.getElementById("btn-cta").onclick = () => location.href = `${WORKER}/login`;
+    document.getElementById("btn-login").onclick = () => location.href = `${WORKER}/login`;
 
     const goDashboard = () => location.href = CLUSTER_PAGE;
     document.getElementById("btn-dashboard").onclick = goDashboard;
-    document.getElementById("btn-cta-dashboard").onclick = goDashboard;
 
     document.getElementById("btn-clear").onclick = () => {
       localStorage.removeItem("session");
