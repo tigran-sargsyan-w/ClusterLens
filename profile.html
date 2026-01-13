@@ -75,6 +75,8 @@
     <div class="topbar">
       <div class="title">42 Cluster Lens (POC)</div>
       <div style="display:flex; gap:10px;">
+        <button class="btn" id="btn-home">Home</button>
+        <button class="btn" id="btn-cluster">Cluster Map</button>
         <button class="btn" id="btn-login">Login</button>
         <button class="btn" id="btn-logout">Logout</button>
       </div>
@@ -88,6 +90,10 @@
   <script>
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
     const HOME_PAGE = "/";
+    const CLUSTER_PAGE = "cluster.html";
+
+    document.getElementById("btn-home").onclick = () => location.href = HOME_PAGE;
+    document.getElementById("btn-cluster").onclick = () => location.href = CLUSTER_PAGE;
 
     document.getElementById("btn-login").onclick = () => {
       location.href = `${WORKER}/login`;
@@ -97,6 +103,22 @@
       localStorage.removeItem("session");
       location.href = HOME_PAGE;
     };
+
+    function hasSession(){
+      return !!localStorage.getItem("session");
+    }
+
+    function refreshStatus(){
+      const logged = hasSession();
+      const elLogin = document.getElementById("btn-login");
+      const elLogout = document.getElementById("btn-logout");
+      const elCluster = document.getElementById("btn-cluster");
+      if (elLogin) elLogin.style.display = logged ? "none" : "inline-block";
+      if (elLogout) elLogout.style.display = logged ? "inline-block" : "none";
+      if (elCluster) elCluster.style.display = logged ? "inline-block" : "none";
+    }
+
+    refreshStatus();
 
     function el(tag, attrs={}, ...children){
       const node = document.createElement(tag);
