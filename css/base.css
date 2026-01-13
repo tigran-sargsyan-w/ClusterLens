@@ -1,0 +1,98 @@
+:root{
+  --bg:#0b0f17;
+  --card:#121a26;
+  --muted:#9aa4b2;
+  --text:#e7edf5;
+  --line:#243044;
+  --good:#2ecc71;
+  --bad:#ff5c5c;
+  --warn:#f5c542;
+  --chip:#1b2637;
+}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.wrap{
+  margin:0 auto;
+  padding:22px;
+}
+
+.topbar{
+  display:flex;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:16px;
+}
+
+.title{
+  font-size:18px;
+  color:var(--muted);
+}
+
+.btn{
+  background:transparent;
+  border:1px solid var(--line);
+  color:var(--text);
+  padding:10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+}
+
+.btn:hover{ border-color:#3a4b6b; }
+
+.btn:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.25);
+}
+
+.row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:10px;
+}
+
+.chip{
+  display:inline-flex;
+  gap:8px;
+  align-items:center;
+  background:var(--chip);
+  border:1px solid var(--line);
+  padding:8px 10px;
+  border-radius:999px;
+  color:var(--text);
+  font-size:13px;
+}
+
+.muted{ color:var(--muted); }
+
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", monospace;
+}
+
+.dot{
+  width:8px;
+  height:8px;
+  border-radius:99px;
+  background:var(--muted);
+}
+
+.dot.good{ background:var(--good); }
+
+.dot.warn{ background:var(--warn); }
+
+.dot.bad{ background:var(--bad); }
