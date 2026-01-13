@@ -4,71 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Cluster 42</title>
-  <style>
-    :root{
-      --bg:#0b0f17; --card:#121a26; --muted:#9aa4b2; --text:#e7edf5;
-      --line:#243044; --good:#2ecc71; --bad:#ff5c5c; --warn:#f5c542;
-      --chip:#1b2637;
-    }
-    body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial; background:var(--bg); color:var(--text); }
-    .wrap{ max-width:980px; margin:0 auto; padding:22px; }
-    .topbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px; }
-    .title{ font-size:18px; color:var(--muted); }
-    .btn{
-      background:transparent; border:1px solid var(--line); color:var(--text);
-      padding:10px 12px; border-radius:12px; cursor:pointer;
-    }
-    .btn:hover{ border-color:#3a4b6b; }
-    .grid{ display:grid; gap:14px; grid-template-columns: 1.2fr 0.8fr; }
-    @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
-
-    .card{
-      background:var(--card); border:1px solid var(--line);
-      border-radius:16px; padding:16px;
-      box-shadow: 0 6px 18px rgba(0,0,0,.25);
-    }
-    .profile{ display:flex; gap:14px; align-items:center; }
-    .avatar{ width:72px; height:72px; border-radius:16px; object-fit:cover; border:1px solid var(--line); background:#0f1520; }
-    .name{ font-size:20px; font-weight:650; }
-    .sub{ color:var(--muted); margin-top:2px; }
-    .row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
-    .chip{
-      display:inline-flex; gap:8px; align-items:center;
-      background:var(--chip); border:1px solid var(--line);
-      padding:8px 10px; border-radius:999px; color:var(--text);
-      font-size:13px;
-    }
-    .dot{ width:8px; height:8px; border-radius:99px; background:var(--muted); }
-    .dot.good{ background:var(--good); }
-    .dot.bad{ background:var(--bad); }
-    .dot.warn{ background:var(--warn); }
-
-    details{ border:1px solid var(--line); border-radius:14px; overflow:hidden; background:rgba(0,0,0,.08); }
-    summary{
-      cursor:pointer; list-style:none; padding:12px 14px; user-select:none;
-      display:flex; justify-content:space-between; align-items:center;
-    }
-    summary::-webkit-details-marker{ display:none; }
-    .details-body{ padding:12px 14px; border-top:1px solid var(--line); color:var(--text); }
-    .kvs{ display:grid; grid-template-columns: 170px 1fr; gap:8px 12px; }
-    .k{ color:var(--muted); }
-    .list{ margin:0; padding:0; list-style:none; display:grid; gap:10px; }
-    .item{
-      border:1px solid var(--line); border-radius:14px; padding:12px;
-      display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
-      background:rgba(255,255,255,.02);
-    }
-    .item-title{ font-weight:600; }
-    .item-sub{ color:var(--muted); font-size:13px; margin-top:4px; }
-    .pill{
-      font-size:12px; padding:6px 10px; border-radius:999px;
-      border:1px solid var(--line); background:rgba(0,0,0,.18); color:var(--text);
-      white-space:nowrap;
-    }
-    .muted{ color:var(--muted); }
-    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .error{ color: var(--bad); }
-  </style>
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/profile.css" />
 </head>
 <body>
   <div class="wrap">
