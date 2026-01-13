@@ -520,6 +520,23 @@
   </div>
 </div>
 
+<div class="modalOverlay" id="sessionModalOverlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modalHeader">
+      <div class="modalTitle">No session</div>
+      <button class="modalClose" id="sessionModalClose">Close</button>
+    </div>
+
+    <div class="modalBody">
+      <div style="font-size:18px; color:var(--muted);">No session found. Please login.</div>
+
+      <div class="modalActions">
+        <a class="modalLink" id="sessionModalLogin" href="#">Login</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 
   <script>
 
@@ -574,6 +591,27 @@
     // === User Modal ===
     const modalOverlay = document.getElementById("userModalOverlay");
     const modalCloseBtn = document.getElementById("userModalClose");
+
+    // === Session Modal ===
+    const sessionModalOverlay = document.getElementById("sessionModalOverlay");
+    const sessionModalCloseBtn = document.getElementById("sessionModalClose");
+    const sessionModalLogin = document.getElementById("sessionModalLogin");
+
+    function showSessionModal(){
+      if (!sessionModalOverlay) return;
+      sessionModalOverlay.classList.add("show");
+      sessionModalOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closeSessionModal(){
+      if (!sessionModalOverlay) return;
+      sessionModalOverlay.classList.remove("show");
+      sessionModalOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    if (sessionModalCloseBtn) sessionModalCloseBtn.onclick = closeSessionModal;
+    if (sessionModalOverlay) sessionModalOverlay.addEventListener("click", (e) => { if (e.target === sessionModalOverlay) closeSessionModal(); });
+    if (sessionModalLogin) sessionModalLogin.onclick = () => { location.href = `${WORKER}/login`; };
 
     // async function openUserModal(user){
     // if (!user) return;
@@ -978,7 +1016,8 @@
       const session = await getSessionIdFromUrlOrStorage();
       if (!session){
         document.getElementById("updated").textContent = "No session";
-        setStatusMsg("No session found. Please open login.html and sign in.");
+        setStatusMsg("No session found.");
+        showSessionModal();
         return;
       }
 
