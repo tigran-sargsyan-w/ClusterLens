@@ -664,7 +664,6 @@
 
         try {
             const url = `${WORKER}/user?session=${encodeURIComponent(session)}&id=${encodeURIComponent(user.id)}`;
-
             const r = await fetch(url);
 
             // читаем как текст, чтобы увидеть даже не-JSON ответы
@@ -682,8 +681,6 @@
             const full = j.user;
             const derived = j.derived || {};
 
-            // document.getElementById("userModalLevel").textContent =
-            // (derived.level42 != null) ? String(derived.level42) : "—";
             document.getElementById("userModalLevel").textContent =
             (derived.level42 != null) ? trunc2(derived.level42) : "—";
 
@@ -698,9 +695,6 @@
         }
     }
 
-
-
-
     function closeUserModal(){
     modalOverlay.classList.remove("show");
     modalOverlay.setAttribute("aria-hidden", "true");
@@ -713,7 +707,6 @@
     document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") closeUserModal();
     });
-
 
     // === CONFIG ===
     const WORKER = "https://cluster-42.tigran-sargsyan-w.workers.dev";
@@ -929,7 +922,6 @@
       return url.searchParams.get("session") || localStorage.getItem("session");
     }
 
-
     async function getSessionIdFromUrlOrStorage(){
       const url = new URL(location.href);
       const sessionFromUrl = url.searchParams.get("session");
@@ -956,8 +948,6 @@
       const campus = (data?.me?.campus || []).find(c => c?.id === campusId) || (data?.me?.campus || [])[0];
       return { id: campusId, name: campus?.name || "—" };
     }
-
-
 
     // === Cache ===
     const CACHE_TTL_MS = 30 * 1000;
@@ -1030,10 +1020,6 @@
       scaleMapToFit();
     }
 
-
-
-
-
     // === Main load ===
     async function load(){
       setStatusMsg("");
@@ -1074,10 +1060,6 @@
         renderClusterData(cached, { source: "cache" });
       }
 
-
-
-
-
       const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(campus.id)}`;
 
       const res = await fetch(api);
@@ -1092,54 +1074,6 @@
 
       // console.log("cluster data", data);
       // console.log("campus", campus);
-
-      // сохранить последние данные для отладки
-//         window.__lastCluster = data;
-
-//         // вывести количество рядов по зонам
-//         const zones = Array.isArray(data.zones) ? data.zones : [];
-//         document.getElementById("zonesDbg").textContent =
-//         zones.length ? zones.map(z => z.name).join(",") : "none";
-
-//         document.getElementById("rowsDbg").textContent =
-//         zones.length ? zones.map(z => `${z.name}:${z.rows?.length ?? 0}`).join(" | ") : "—";
-
-//       if (!data?.ok){
-//         document.getElementById("updated").textContent = "Bad response";
-//         setStatusMsg("Unexpected response from /cluster.");
-//         return;
-//       }
-
-//       document.getElementById("occ").textContent = data.stats?.occupied ?? "—";
-//       document.getElementById("free").textContent = data.stats?.free ?? "—";
-//       document.getElementById("blocked").textContent = data.stats?.blocked ?? "—";
-//       document.getElementById("updated").textContent = fmtTime(data.updated_at);
-//       // document.getElementById("seatmapSource").textContent = data.seatmap_source || "—";
-
-//       renderBars(document.getElementById("promoBars"), data.stats?.promo);
-//       renderBars(document.getElementById("kindBars"), data.stats?.kind);
-
-//       // const zones = Array.isArray(data.zones) ? data.zones : [];
-//       const map = document.getElementById("mapZones");
-//       map.innerHTML = "";
-
-//       if (!zones.length){
-//         setStatusMsg(
-//           `Seatmap is empty (seatmap_source=${data.seatmap_source || "—"}).
-// Most likely the Worker hasn't been updated to host-parsing or there are no host-coordinates in the response.`
-//         );
-//         return;
-//       }
-
-//       const visible = filterZonesByTab(zones);
-      
-//       for (const z of visible) renderZoneInto(map, z);
-      
-//       // Scale map to fit screen on mobile
-//       scaleMapToFit();
-
-
-
 
       window.__lastCluster = data;
       writeCachedCluster(campus.id, activeTab, data);
