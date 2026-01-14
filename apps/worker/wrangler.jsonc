@@ -13,7 +13,13 @@
     "FRONTEND_ORIGIN": "https://cluster-lens.vercel.app/",
     "FRONTEND_URL": "https://cluster-lens.vercel.app/cluster.html"
   },
-
+  "observability": {
+    "logs": {
+      "enabled": false,
+      "invocation_logs": true
+    }
+  },
+    // 🔸 Привязка к KV Namespace (создан в Cloudflare Dashboard)
   "kv_namespaces": [
     {
       "binding": "OAUTH",
