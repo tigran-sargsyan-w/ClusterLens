@@ -44,6 +44,12 @@ export default {
       return new Response("Method Not Allowed", { status: 405 });
     }
 
+    if (url.pathname === "/") {
+      return new Response("cluster-42 worker is alive", {
+        headers: { "content-type": "text/plain; charset=utf-8" }
+      });
+    }
+
     if (path === "/login") return handleLogin(url, env);
     if (path === "/callback") return handleCallback(url, env);
     if (path === "/session") return handleSession(url, env);
