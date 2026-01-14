@@ -1287,7 +1287,7 @@ async function debugBuildSeatmap(url, env) {
     await new Promise(r => setTimeout(r, 200));
   }
 
-  // обновляем seatmap по этой пачке
+  // обновляем seatmap по этой пачке 
   const updated = buildSeatmapFromHosts(hostsBatch, prev);
   updated.source = "host:incremental";
   updated.generated_at = Date.now();
