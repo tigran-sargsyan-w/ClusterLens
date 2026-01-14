@@ -1,21 +1,3 @@
-/**
- * Welcome to Cloudflare Workers! This is your first worker.
- *
- * - Run "npm run dev" in your terminal to start a development server
- * - Open a browser tab at http://localhost:8787/ to see your worker in action
- * - Run "npm run deploy" to publish your worker
- *
- * Learn more at https://developers.cloudflare.com/workers/
- */
-
-// export default {
-//   async fetch(request, env, ctx) {
-//     // You can view your logs in the Observability dashboard
-//     console.info({ message: 'Hello World Worker received a request!' }); 
-//     return new Response('Hello World!');
-//   }
-// };
-
 const SEATMAP_REFRESH_MS = 12 * 60 * 60 * 1000; // 12 часов
 const SEATMAP_LOCK_TTL = 120; // 2 минуты
 const SEATMAP_COOLDOWN_MS = 30 * 60 * 1000; // 30 минут после 429
@@ -45,6 +27,7 @@ export default {
         }
 
         if (url.pathname === "/") {
+            console.log("env.Secret", env.FT_CLIENT_ID);
             return new Response("cluster-42 worker is alive", {
                 headers: { "content-type": "text/plain; charset=utf-8" }
             });
@@ -61,8 +44,6 @@ export default {
         if (path === "/debug/hosts_page") return debugHostsPage(url, env);
         if (path === "/debug/build_seatmap") return debugBuildSeatmap(url, env);
         if (path === "/user") return handleUser(url, env);
-
-
 
         return new Response("Not Found", { status: 404 });
     },
@@ -172,105 +153,6 @@ function cryptoRandomHex(bytesLen) {
     return [...bytes].map(b => b.toString(16).padStart(2, "0")).join("");
 }
 
-// async function handleCluster(url, env) {
-//   const sessionId = url.searchParams.get("session");
-//   const campusId = url.searchParams.get("campus_id");
-//   if (!sessionId) return new Response("Missing ?session", { status: 400 });
-//   if (!campusId) return new Response("Missing ?campus_id", { status: 400 });
-
-//   const raw = await env.OAUTH.get(`sess:${sessionId}`);
-//   if (!raw) return new Response("Session expired", { status: 401 });
-
-//   const { accessToken } = JSON.parse(raw);
-
-//   // 1) активные locations
-//   const activeLocations = await fetchActiveCampusLocations(campusId, accessToken);
-
-//   // 2) seatmap из host (KV cache + наращивание)
-//   const seatmapKey = `seatmap_host:${campusId}`;
-//   const prevRaw = await env.OAUTH.get(seatmapKey);
-//   const prev = prevRaw ? JSON.parse(prevRaw) : null;
-
-//   // const hosts = activeLocations.map(x => x?.host).filter(Boolean);
-//   // const seatmap = buildSeatmapFromHosts(hosts, prev);
-
-//   // seatmap делаем по ВСЕМ locations, чтобы были все ряды/места
-//   const allLocations = await fetchAllCampusLocations(campusId, accessToken);
-//   const allHosts = allLocations.map(x => x?.host).filter(Boolean);
-//   const seatmap = buildSeatmapFromHosts(allHosts, prev);
-
-//   // кэшируем на 7 дней (можно и больше)
-//   await env.OAUTH.put(seatmapKey, JSON.stringify(seatmap), { expirationTtl: 604800 });
-
-//   // 3) добираем пользователей пачкой
-//   const userIds = [...new Set(activeLocations.map(l => l?.user?.id).filter(Boolean))];
-//   const usersById = await fetchUsersByIds(userIds, accessToken);
-
-//   // 4) occupied map по host -> (Z,R,P)
-//   const occupied = new Map(); // "Z1|R2|4"
-//   for (const l of activeLocations) {
-//     const seat = parseSeatFromHost(l?.host);
-//     if (!seat) continue;
-
-//     const u = usersById.get(l.user.id);
-//     occupied.set(`${seat.zone}|${seat.row}|${seat.post}`, {
-//       status: "occupied",
-//       post: seat.post,
-//       user: u ? {
-//         id: u.id,
-//         login: u.login,
-//         displayname: u.displayname,
-//         avatar: u.image?.versions?.micro || u.image?.versions?.small || u.image?.link,
-//         pool_year: u.pool_year,
-//         kind: u.kind,
-//         staff: u["staff?"],
-//         alumni: u["alumni?"],
-//       } : { id: l.user.id, login: l.user.login },
-//     });
-//   }
-
-//   // 5) zonesOut = seatmap + overlay
-//   const zonesOut = seatmap.zones.map(z => ({
-//     name: z.name,
-//     rows: z.rows.map(r => ({
-//       name: r.name,
-//       seats: r.posts.map(p => occupied.get(`${z.name}|${r.name}|${p}`) || { status: "free", post: p }),
-//     })),
-//   }));
-
-//   // 6) stats
-//   const stats = { occupied: 0, free: 0, blocked: 0, promo: {}, kind: {} };
-
-//   for (const z of zonesOut) {
-//     for (const r of z.rows) {
-//       for (const s of r.seats) {
-//         stats[s.status] = (stats[s.status] || 0) + 1;
-//         if (s.status === "occupied" && s.user) {
-//           const py = s.user.pool_year || "unknown";
-//           stats.promo[py] = (stats.promo[py] || 0) + 1;
-
-//           const k = s.user.kind || "unknown";
-//           stats.kind[k] = (stats.kind[k] || 0) + 1;
-//         }
-//       }
-//     }
-//   }
-
-//   return new Response(JSON.stringify({
-//     ok: true,
-//     updated_at: new Date().toISOString(),
-//     zones: zonesOut,
-//     stats,
-//     seatmap_source: seatmap.source,
-//   }), {
-//     headers: {
-//       "Content-Type": "application/json",
-//       "Access-Control-Allow-Origin": env.FRONTEND_ORIGIN,
-//     }
-//   });
-// }
-
-
 // ---------------- helpers ----------------
 
 async function handleCluster(url, env, ctx) {
@@ -288,12 +170,9 @@ async function handleCluster(url, env, ctx) {
     const activeLocations = await fetchActiveCampusLocations(campusId, accessToken);
     const activeHosts = activeLocations.map(x => x?.host).filter(Boolean);
 
+    // 2) seatmap из KV или временный (из active) + фоновое обновление
     const seatRes = await getSeatmapFast(env, campusId, ctx, accessToken, activeHosts);
     const seatmap = seatRes.seatmap;
-
-    // 2) seatmap из KV или временный (из active) + фоновое обновление
-    // const seatmapResult = await getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts);
-    // const seatmap = seatmapResult.seatmap;
 
     // 3) users bulk
     const userIds = [...new Set(activeLocations.map(l => l?.user?.id).filter(Boolean))];
@@ -324,10 +203,6 @@ async function handleCluster(url, env, ctx) {
                     || u.image?.versions?.medium
                     || u.image?.link,
                 // уровень (может отсутствовать)
-                // level: (Array.isArray(u.cursus_users) && u.cursus_users.length)
-                // ? (u.cursus_users.find(c => c?.cursus?.slug === "42" || c?.cursus?.name === "42")?.level
-                //   ?? u.cursus_users[0]?.level
-                //   ?? null) : null,
                 level: (() => {
                     const cu = (Array.isArray(u?.cursus_users) && u.cursus_users.length)
                         ? (
@@ -380,9 +255,7 @@ async function handleCluster(url, env, ctx) {
         seatmap_generated_at: seatmap.generated_at || null,
         seatmap_hosts_count: seatmap.hosts_count || null,
         seatmap_refreshing: !!seatRes.refreshing,
-        // seatmap_refreshing: !!seatmapResult.refreshing,
         seatmap_error: seatRes.error || null,
-        // seatmap_error: seatmapResult.error || null,
         seatmap_building: !!seatRes.building,
         seatmap_build_err: seatRes.error || null,
 
@@ -561,32 +434,6 @@ async function fetchAllCampusHosts(campusId, accessToken) {
     return hosts;
 }
 
-
-// async function fetchUsersByIds(ids, accessToken) {
-//   const map = new Map();
-//   if (!ids.length) return map;
-
-//   // На всякий случай chunk по 90–100
-//   const CHUNK = 90;
-//   for (let i = 0; i < ids.length; i += CHUNK) {
-//     const part = ids.slice(i, i + CHUNK);
-
-//     const u = new URL("https://api.intra.42.fr/v2/users");
-//     u.searchParams.set("filter[id]", part.join(","));
-//     u.searchParams.set("page[size]", "100");
-
-//     const res = await fetch(u.toString(), {
-//       headers: { Authorization: `Bearer ${accessToken}` },
-//     });
-
-//     if (!res.ok) continue;
-//     const users = await res.json();
-//     for (const user of users) map.set(user.id, user);
-//   }
-
-//   return map;
-// }
-
 async function fetchUsersByIds(ids, accessToken) {
     const map = new Map();
     if (!ids.length) return map;
@@ -704,7 +551,6 @@ function buildSeatmapFromHosts(hosts, prevSeatmap) {
     return { source: "host:all-locations", maxima, zones };
 }
 
-
 function naturalRowSort(a, b) {
     const na = extractNum(a);
     const nb = extractNum(b);
@@ -755,8 +601,6 @@ async function getSeatmapCached(env, campusId, accessToken) {
     const hasData = prev?.zones?.length > 0 && prev?.maxima && Object.keys(prev.maxima).length > 0;
     const isFresh = hasData && prev?.generated_at && (now - prev.generated_at) < REFRESH_MS;
 
-    // const isFresh = prev?.generated_at && (now - prev.generated_at) < REFRESH_MS;
-
     // свежий seatmap — сразу отдаём
     if (prev && isFresh) return { seatmap: prev, refreshed: false };
 
@@ -784,55 +628,6 @@ async function getSeatmapCached(env, campusId, accessToken) {
         };
     }
 }
-
-// async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts) {
-//   const key = `seatmap_host:${campusId}`;
-//   const prevRaw = await env.OAUTH.get(key);
-//   const prev = prevRaw ? JSON.parse(prevRaw) : null;
-
-//   const now = Date.now();
-//   const REFRESH_MS = 24 * 60 * 60 * 1000;
-
-//   const hasPrev = prev?.zones?.length > 0 && prev?.maxima && Object.keys(prev.maxima).length > 0;
-//   const isFresh = hasPrev && prev?.generated_at && (now - prev.generated_at) < REFRESH_MS;
-
-//   // 1) Если свежий — отдаем сразу
-//   if (isFresh) return { seatmap: prev, refreshing: false };
-
-//   // 2) Отдаем fallback (чтобы UI работал мгновенно)
-//   //    - если есть прошлый seatmap — используем его
-//   //    - иначе строим временный по active
-//   let fallback;
-//   if (hasPrev) {
-//     // важно: не мутировать prev
-//     fallback = JSON.parse(JSON.stringify(prev));
-//     fallback.source = (fallback.source || "host:all-locations") + "|stale";
-//   } else {
-//     fallback = buildSeatmapFromHosts(activeHosts, null);
-//     fallback.source = (fallback.source || "host:active") + "|fallback";
-//   }
-
-//   // 3) Запускаем фоновое обновление KV (НЕ блокируем ответ)
-//   if (ctx?.waitUntil) {
-//     ctx.waitUntil(refreshSeatmapInBackground(env, campusId, accessToken, prev));
-//     return { seatmap: fallback, refreshing: true };
-//   }
-
-//   // если ctx нет (не должно быть после правки fetch), вернем fallback
-//   return { seatmap: fallback, refreshing: false };
-// }
-
-// async function refreshSeatmapInBackground(env, campusId, accessToken, prev) {
-//   const key = `seatmap_host:${campusId}`;
-//   const TTL_SEATMAP = 7 * 24 * 60 * 60; // seconds
-
-//   const hosts = await fetchAllCampusHosts(campusId, accessToken);
-//   const updated = buildSeatmapFromHosts(hosts, prev);
-//   updated.generated_at = Date.now();
-//   updated.hosts_count = hosts.length;
-
-//   await env.OAUTH.put(key, JSON.stringify(updated), { expirationTtl: TTL_SEATMAP });
-// }
 
 async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts) {
     const key = `seatmap_host:${campusId}`;
@@ -1052,37 +847,6 @@ function pickAvatarLarge(u) {
         || u?.image?.link
         || null;
 }
-
-// function pickActiveGrade(u) {
-//   const cursusUsers = u?.cursus_users;
-//   if (!Array.isArray(cursusUsers)) return null;
-//   const active = cursusUsers.find(c => c.end_at === null);
-//   return active?.grade || null;
-// }
-// function pickActiveGrade(u) {
-//   const cursusUsers = u?.cursus_users;
-//   if (!Array.isArray(cursusUsers) || !cursusUsers.length) return null;
-
-//   // 1) Пробуем найти активный (end_at === null)
-//   const active = cursusUsers.find(c => c.end_at === null);
-//   if (active?.grade) return active.grade;
-
-//   // 2) Fallback: ищем 42cursus
-//   const c42 = cursusUsers.find(c => 
-//     c?.cursus?.slug === "42cursus" || 
-//     c?.cursus_id === 21 || 
-//     c?.cursus?.id === 21
-//   );
-//   if (c42?.grade) return c42.grade;
-
-//   // 3) Fallback: берем любой cursus с grade
-//   for (let i = cursusUsers.length - 1; i >= 0; i--) {
-//     if (cursusUsers[i]?.grade) return cursusUsers[i].grade;
-//   }
-
-//   return null;
-// }
-
 
 async function debugHosts(url, env) {
     const sessionId = url.searchParams.get("session");
