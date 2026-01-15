@@ -73,6 +73,58 @@ That’s why statistics are one of the most valuable and “alive” features of
 - anyone who wants a stable and friendly tool.
 
 ---
+## 🏗️ Architecture & flow
+
+This repo is **full‑stack**: a static front‑end + a Cloudflare Worker back‑end.
+
+```
+User (browser)
+   │
+   ├──> Frontend (Vercel) ──┐
+   │                        │
+   └──> Worker (Cloudflare) ├──> 42 API (OAuth + data)
+                            └──> KV Cache (seatmap + sessions)
+```
+
+### Frontend (apps/web)
+- Static HTML/CSS/JS pages (`index.html`, `cluster.html`, `profile.html`).
+- Calls the Worker for OAuth, session validation, cluster data, and user overlays.
+- Deployed on **Vercel** with clean URLs support. 
+
+### Backend (apps/worker)
+- Cloudflare Worker handling OAuth, session storage, and data aggregation.
+- Uses **KV** to cache seatmaps, sessions, and user data to reduce 42 API load.
+- Includes background seatmap refresh with cooldowns for rate limits.
+- Exposes endpoints: `/login`, `/callback`, `/session`, `/cluster`, `/user` and debug helpers. 
+
+---
+
+## 📦 Repository structure
+
+```
+apps/
+  web/      # Frontend (static pages + JS/CSS)
+  worker/   # Cloudflare Worker backend
+```
+
+---
+
+## 🚀 Deployment model (Vercel + Cloudflare)
+
+- **Frontend**: Vercel serves static pages and is already configured for clean URLs. 
+- **Backend**: Cloudflare Worker + KV (Wrangler config in `apps/worker`).
+
+Both platforms support **automatic deployments** when connected to a Git repo (Vercel Git integration + Cloudflare Wrangler CI). This repo is laid out to make that split‑deploy workflow straightforward. 
+
+---
+
+## 🔐 OAuth & privacy
+
+- Login happens on 42’s side via OAuth.
+- No passwords are stored.
+- The Worker only stores short‑lived session tokens in KV.
+
+---
 
 ## 🤝 Contributions are welcome
 
