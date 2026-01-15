@@ -87,7 +87,7 @@ function getActiveGrade(cursusUsers) {
 async function openUserModal(user) {
     if (!user) return;
 
-    // 1) мгновенно показываем то, что есть
+    // 1) show whatever we already have immediately
     document.getElementById("userModalName").textContent = user.displayname || user.login || "—";
     document.getElementById("userModalLogin").textContent = user.login ? `@${user.login}` : "—";
     document.getElementById("userModalLevel").textContent = (user.level != null) ? String(user.level) : "—";
@@ -109,7 +109,7 @@ async function openUserModal(user) {
 
     modalOverlay.classList.add("show");
 
-    // 2) догружаем полный профиль
+    // 2) fetch the full profile
     const session = getSessionFromStorageOrUrl();
     // console.log("session from storage/url =", session);
 
@@ -123,7 +123,7 @@ async function openUserModal(user) {
         const url = `${WORKER}/user?session=${encodeURIComponent(session)}&id=${encodeURIComponent(user.id)}`;
         const r = await fetch(url);
 
-        // читаем как текст, чтобы увидеть даже не-JSON ответы
+        // Read as text first to catch non-JSON responses too
         const text = await r.text();
         let j;
         try {
@@ -172,7 +172,7 @@ const PROFILE_PAGE = "profile.html";
 const CLUSTER_PAGE = "cluster.html";
 
 const ROW_FIRST_POSITION = {
-    // примеры:
+    // examples:
     // "Z1:R1": "top",
     // "Z1:R2": "bottom",
     // "R3": "top",
@@ -270,7 +270,7 @@ function filterZonesByTab(zones) {
     const hasZ4 = zones.some(z => z.name === "Z4");
     const byName = new Map(zones.map(z => [z.name, z]));
 
-    // если это действительно схема Z1..Z4 — фильтруем красиво
+    // If this really is the Z1..Z4 layout, filter nicely
     if (hasZ1 || hasZ2 || hasZ3 || hasZ4) {
         if (activeTab === "io") {
             const ordered = ["Z2", "Z1"].map(n => byName.get(n)).filter(Boolean);
@@ -281,7 +281,7 @@ function filterZonesByTab(zones) {
         }
     }
 
-    // иначе (неожиданные имена зон) — показываем всё
+    // Otherwise (unexpected zone names), show everything
     return zones;
 }
 
@@ -538,5 +538,5 @@ async function load() {
     renderClusterData(data, { source: "network" });
 }
 
-// старт
+// start
 load();
