@@ -1,42 +1,42 @@
 // === Dynamic map scaling for mobile ===
 function scaleMapToFit() {
     if (window.innerWidth > 768) {
-    // Desktop - reset any scaling
-    const mapWrap = document.getElementById("mapZones");
-    if (mapWrap) {
-        mapWrap.style.transform = '';
-        mapWrap.style.transformOrigin = '';
-        mapWrap.style.marginBottom = '';
+        // Desktop - reset any scaling
+        const mapWrap = document.getElementById("mapZones");
+        if (mapWrap) {
+            mapWrap.style.transform = '';
+            mapWrap.style.transformOrigin = '';
+            mapWrap.style.marginBottom = '';
+        }
+        return;
     }
-    return;
-    }
-    
+
     const mapWrap = document.getElementById("mapZones");
     if (!mapWrap || !mapWrap.children.length) return;
-    
+
     // Reset transform first to get actual size
     mapWrap.style.transform = 'none';
     mapWrap.style.marginBottom = '0';
-    
+
     // Wait for layout
     requestAnimationFrame(() => {
-    const mapWidth = mapWrap.scrollWidth;
-    const card = mapWrap.closest('.card');
-    const cardPadding = 16 * 2; // padding on both sides
-    const availableWidth = (card ? card.clientWidth : window.innerWidth) - cardPadding;
-    
-    if (mapWidth > availableWidth) {
-        const scale = availableWidth / mapWidth;
-        mapWrap.style.transformOrigin = 'top left';
-        mapWrap.style.transform = `scale(${scale})`;
-        // Adjust container height to match scaled content
-        const mapHeight = mapWrap.scrollHeight;
-        mapWrap.style.marginBottom = `-${mapHeight * (1 - scale)}px`;
-        // console.log(`Map scaled: ${mapWidth}px → ${availableWidth}px (scale: ${scale.toFixed(3)})`);
-    } else {
-        mapWrap.style.transform = '';
-        mapWrap.style.marginBottom = '';
-    }
+        const mapWidth = mapWrap.scrollWidth;
+        const card = mapWrap.closest('.card');
+        const cardPadding = 16 * 2; // padding on both sides
+        const availableWidth = (card ? card.clientWidth : window.innerWidth) - cardPadding;
+
+        if (mapWidth > availableWidth) {
+            const scale = availableWidth / mapWidth;
+            mapWrap.style.transformOrigin = 'top left';
+            mapWrap.style.transform = `scale(${scale})`;
+            // Adjust container height to match scaled content
+            const mapHeight = mapWrap.scrollHeight;
+            mapWrap.style.marginBottom = `-${mapHeight * (1 - scale)}px`;
+            // console.log(`Map scaled: ${mapWidth}px → ${availableWidth}px (scale: ${scale.toFixed(3)})`);
+        } else {
+            mapWrap.style.transform = '';
+            mapWrap.style.marginBottom = '';
+        }
     });
 }
 
@@ -55,13 +55,13 @@ const sessionModalOverlay = document.getElementById("sessionModalOverlay");
 const sessionModalCloseBtn = document.getElementById("sessionModalClose");
 const sessionModalLogin = document.getElementById("sessionModalLogin");
 
-function showSessionModal(){
+function showSessionModal() {
     if (!sessionModalOverlay) return;
     sessionModalOverlay.classList.add("show");
     sessionModalOverlay.setAttribute("aria-hidden", "false");
 }
 
-function closeSessionModal(){
+function closeSessionModal() {
     if (!sessionModalOverlay) return;
     sessionModalOverlay.classList.remove("show");
     sessionModalOverlay.setAttribute("aria-hidden", "true");
@@ -71,7 +71,7 @@ if (sessionModalCloseBtn) sessionModalCloseBtn.onclick = closeSessionModal;
 if (sessionModalOverlay) sessionModalOverlay.addEventListener("click", (e) => { if (e.target === sessionModalOverlay) closeSessionModal(); });
 if (sessionModalLogin) sessionModalLogin.onclick = () => { location.href = `${WORKER}/login`; };
 
-function trunc2(v){
+function trunc2(v) {
     const n = Number(v);
     if (!Number.isFinite(n)) return "—";
     return (Math.floor(n * 100) / 100).toFixed(2);
@@ -106,7 +106,7 @@ async function openUserModal(user) {
         profileLink.href = "#";
         profileLink.setAttribute("aria-disabled", "true");
     }
-    
+
     modalOverlay.classList.add("show");
 
     // 2) догружаем полный профиль
@@ -127,10 +127,10 @@ async function openUserModal(user) {
         const text = await r.text();
         let j;
         try {
-        j = JSON.parse(text);
+            j = JSON.parse(text);
         } catch (e) {
-        console.error("Response is not JSON. Parse error:", e);
-        return;
+            console.error("Response is not JSON. Parse error:", e);
+            return;
         }
 
         if (!j?.ok) return;
@@ -139,7 +139,7 @@ async function openUserModal(user) {
         const derived = j.derived || {};
 
         document.getElementById("userModalLevel").textContent =
-        (derived.level42 != null) ? trunc2(derived.level42) : "—";
+            (derived.level42 != null) ? trunc2(derived.level42) : "—";
 
         // Get grade from cursus_users where end_at is null
         document.getElementById("userModalKind").textContent = getActiveGrade(full?.cursus_users);
@@ -152,17 +152,17 @@ async function openUserModal(user) {
     }
 }
 
-function closeUserModal(){
-modalOverlay.classList.remove("show");
-modalOverlay.setAttribute("aria-hidden", "true");
+function closeUserModal() {
+    modalOverlay.classList.remove("show");
+    modalOverlay.setAttribute("aria-hidden", "true");
 }
 
 modalCloseBtn.onclick = closeUserModal;
 modalOverlay.addEventListener("click", (e) => {
-if (e.target === modalOverlay) closeUserModal();
+    if (e.target === modalOverlay) closeUserModal();
 });
 document.addEventListener("keydown", (e) => {
-if (e.key === "Escape") closeUserModal();
+    if (e.key === "Escape") closeUserModal();
 });
 
 // === CONFIG ===
@@ -195,17 +195,17 @@ document.getElementById("btn-refresh").onclick = () => load();
 document.getElementById("tab-io").onclick = () => { activeTab = "io"; setTab(true); load(); };
 document.getElementById("tab-disc").onclick = () => { activeTab = "discovery"; setTab(false); load(); };
 
-function setTab(isIo){
+function setTab(isIo) {
     document.getElementById("tab-io").classList.toggle("active", isIo);
     document.getElementById("tab-disc").classList.toggle("active", !isIo);
 }
 
 // Session helpers: show/hide buttons depending on session presence
-function hasSession(){
+function hasSession() {
     return !!localStorage.getItem("session");
 }
 
-function refreshStatus(){
+function refreshStatus() {
     const logged = hasSession();
     // When not logged in: show Login, hide Logout
     // When logged in: show Logout, hide Login
@@ -221,49 +221,49 @@ function refreshStatus(){
 refreshStatus();
 
 // === Helpers ===
-function el(tag, attrs={}, ...children){
+function el(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
-    for (const [k,v] of Object.entries(attrs)){
-    if (k === "class") node.className = v;
-    else if (k === "html") node.innerHTML = v;
-    else node.setAttribute(k, v);
+    for (const [k, v] of Object.entries(attrs)) {
+        if (k === "class") node.className = v;
+        else if (k === "html") node.innerHTML = v;
+        else node.setAttribute(k, v);
     }
-    for (const ch of children){
-    if (ch == null) continue;
-    node.appendChild(typeof ch === "string" ? document.createTextNode(ch) : ch);
+    for (const ch of children) {
+        if (ch == null) continue;
+        node.appendChild(typeof ch === "string" ? document.createTextNode(ch) : ch);
     }
     return node;
 }
 
-function fmtTime(iso){
+function fmtTime(iso) {
     if (!iso) return "—";
     const d = new Date(iso);
-    return isNaN(d) ? iso : d.toLocaleTimeString("ru-RU", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
+    return isNaN(d) ? iso : d.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
-function renderBars(container, obj){
+function renderBars(container, obj) {
     container.innerHTML = "";
-    const entries = Object.entries(obj || {}).sort((a,b) => b[1]-a[1]);
+    const entries = Object.entries(obj || {}).sort((a, b) => b[1] - a[1]);
     if (!entries.length) {
-    container.appendChild(el("div", { class:"muted" }, "—"));
-    return;
+        container.appendChild(el("div", { class: "muted" }, "—"));
+        return;
     }
     const max = Math.max(...entries.map(e => e[1]));
-    for (const [k,v] of entries) {
-    const row = el("div", { class:"barRow" },
-        el("div", { class:"mono muted" }, k),
-        (() => {
-        const bar = el("div", { class:"bar" }, el("i"));
-        bar.firstChild.style.width = `${Math.round((v/max)*100)}%`;
-        return bar;
-        })(),
-        el("div", { class:"mono" }, String(v))
-    );
-    container.appendChild(row);
+    for (const [k, v] of entries) {
+        const row = el("div", { class: "barRow" },
+            el("div", { class: "mono muted" }, k),
+            (() => {
+                const bar = el("div", { class: "bar" }, el("i"));
+                bar.firstChild.style.width = `${Math.round((v / max) * 100)}%`;
+                return bar;
+            })(),
+            el("div", { class: "mono" }, String(v))
+        );
+        container.appendChild(row);
     }
 }
 
-function filterZonesByTab(zones){
+function filterZonesByTab(zones) {
     const hasZ1 = zones.some(z => z.name === "Z1");
     const hasZ2 = zones.some(z => z.name === "Z2");
     const hasZ3 = zones.some(z => z.name === "Z3");
@@ -272,20 +272,20 @@ function filterZonesByTab(zones){
 
     // если это действительно схема Z1..Z4 — фильтруем красиво
     if (hasZ1 || hasZ2 || hasZ3 || hasZ4) {
-    if (activeTab === "io") {
-        const ordered = ["Z2","Z1"].map(n => byName.get(n)).filter(Boolean);
-        return ordered.length ? ordered : zones;
-    } else {
-        const ordered = ["Z4","Z3"].map(n => byName.get(n)).filter(Boolean);
-        return ordered.length ? ordered : zones;
-    }
+        if (activeTab === "io") {
+            const ordered = ["Z2", "Z1"].map(n => byName.get(n)).filter(Boolean);
+            return ordered.length ? ordered : zones;
+        } else {
+            const ordered = ["Z4", "Z3"].map(n => byName.get(n)).filter(Boolean);
+            return ordered.length ? ordered : zones;
+        }
     }
 
     // иначе (неожиданные имена зон) — показываем всё
     return zones;
 }
 
-function resolveZoneStartPosition(zone){
+function resolveZoneStartPosition(zone) {
     const zoneName = zone?.name;
     if (!zoneName) return null;
 
@@ -298,75 +298,75 @@ function resolveZoneStartPosition(zone){
     return (fallback === "top" || fallback === "bottom") ? fallback : null;
 }
 
-function resolveRowStartPosition(zoneName, row, zoneDefault){
+function resolveRowStartPosition(zoneName, row, zoneDefault) {
     const explicit =
-    row?.first_position ||
-    row?.firstPosition ||
-    row?.start_position ||
-    row?.startPosition;
+        row?.first_position ||
+        row?.firstPosition ||
+        row?.start_position ||
+        row?.startPosition;
     if (explicit === "top" || explicit === "bottom") return explicit;
 
     const key = `${zoneName}:${row.name}`;
     return ROW_FIRST_POSITION[key]
-    || zoneDefault
-    || ROW_FIRST_POSITION[row.name]
-    || "top";
+        || zoneDefault
+        || ROW_FIRST_POSITION[row.name]
+        || "top";
 }
 
-function renderZoneInto(container, zone){
-    const inner = el("div", { class:"zoneInner" });
+function renderZoneInto(container, zone) {
+    const inner = el("div", { class: "zoneInner" });
     const zoneDefault = resolveZoneStartPosition(zone);
 
     for (const r of zone.rows) {
-    const startPosition = resolveRowStartPosition(zone.name, r, zoneDefault);
-    const seats = el("div", { class:"seats" },
-        // ...r.seats.map(s => {
-        ...r.seats.map((s, idx) => {
-        const isUp = (startPosition === "bottom")
-            ? idx % 2 === 1
-            : idx % 2 === 0;
+        const startPosition = resolveRowStartPosition(zone.name, r, zoneDefault);
+        const seats = el("div", { class: "seats" },
+            // ...r.seats.map(s => {
+            ...r.seats.map((s, idx) => {
+                const isUp = (startPosition === "bottom")
+                    ? idx % 2 === 1
+                    : idx % 2 === 0;
 
-        const seat = el("div", { class:`seat ${s.status}` });
+                const seat = el("div", { class: `seat ${s.status}` });
 
-        if (s.status === "occupied" && s.user?.avatar) {
-            seat.appendChild(el("img", { src:s.user.avatar, alt:s.user.login, referrerpolicy:"no-referrer" }));
-            seat.appendChild(el("div", { class:"tooltip" },
-            `${s.user.login} • promo ${s.user.pool_year || "—"}`
-            ));
-        } else if (s.status === "blocked") {
-            seat.appendChild(el("div", { class:"ban" }, "🚫"));
-        }
+                if (s.status === "occupied" && s.user?.avatar) {
+                    seat.appendChild(el("img", { src: s.user.avatar, alt: s.user.login, referrerpolicy: "no-referrer" }));
+                    seat.appendChild(el("div", { class: "tooltip" },
+                        `${s.user.login} • promo ${s.user.pool_year || "—"}`
+                    ));
+                } else if (s.status === "blocked") {
+                    seat.appendChild(el("div", { class: "ban" }, "🚫"));
+                }
 
-        if (s.status === "occupied") {
-        seat.style.cursor = "pointer";
-        seat.addEventListener("click", () => openUserModal(s.user));
-        }
+                if (s.status === "occupied") {
+                    seat.style.cursor = "pointer";
+                    seat.addEventListener("click", () => openUserModal(s.user));
+                }
 
-        // return el("div", { class:"seatCol" },
-        return el("div", { class:`seatCol ${isUp ? "up" : "down"}` },
-            seat,
-            el("div", { class:"seatNum mono" }, String(s.post))
+                // return el("div", { class:"seatCol" },
+                return el("div", { class: `seatCol ${isUp ? "up" : "down"}` },
+                    seat,
+                    el("div", { class: "seatNum mono" }, String(s.post))
+                );
+            })
         );
-        })
-    );
 
-    inner.appendChild(
-        el("div", { class:"zoneRow" },
-        seats,
-        el("div", { class:"rowLabel" }, r.name)
-        )
-    );
+        inner.appendChild(
+            el("div", { class: "zoneRow" },
+                seats,
+                el("div", { class: "rowLabel" }, r.name)
+            )
+        );
     }
 
-    const zoneBox = el("div", { class:"zone" },
-    el("div", { class:"zoneTitle" }, zone.name),
-    inner
+    const zoneBox = el("div", { class: "zone" },
+        el("div", { class: "zoneTitle" }, zone.name),
+        inner
     );
 
     container.appendChild(zoneBox);
 }
 
-function setStatusMsg(text){
+function setStatusMsg(text) {
     const box = document.getElementById("statusMsg");
     if (!text) { box.style.display = "none"; box.textContent = ""; return; }
     box.style.display = "block";
@@ -374,12 +374,12 @@ function setStatusMsg(text){
 }
 
 // === Session + Campus ===
-function getSessionFromStorageOrUrl(){
+function getSessionFromStorageOrUrl() {
     const url = new URL(location.href);
     return url.searchParams.get("session") || localStorage.getItem("session");
 }
 
-async function getSessionIdFromUrlOrStorage(){
+async function getSessionIdFromUrlOrStorage() {
     const url = new URL(location.href);
     const sessionFromUrl = url.searchParams.get("session");
     const session = sessionFromUrl || localStorage.getItem("session");
@@ -387,14 +387,14 @@ async function getSessionIdFromUrlOrStorage(){
     if (!session) return null;
 
     localStorage.setItem("session", session);
-    if (sessionFromUrl){
-    url.searchParams.delete("session");
-    history.replaceState({}, "", url.toString());
+    if (sessionFromUrl) {
+        url.searchParams.delete("session");
+        history.replaceState({}, "", url.toString());
     }
     return session;
 }
 
-async function getPrimaryCampus(session){
+async function getPrimaryCampus(session) {
     const res = await fetch(`${WORKER}/session?session=${encodeURIComponent(session)}`);
     if (!res.ok) throw new Error("Session invalid/expired");
 
@@ -410,35 +410,35 @@ async function getPrimaryCampus(session){
 const CACHE_TTL_MS = 30 * 1000;
 const CACHE_KEY_PREFIX = "cluster-cache:";
 
-function getCacheKey(campusId, tab){
+function getCacheKey(campusId, tab) {
     return `${CACHE_KEY_PREFIX}${campusId}:${tab}`;
 }
 
-function readCachedCluster(campusId, tab){
+function readCachedCluster(campusId, tab) {
     const raw = sessionStorage.getItem(getCacheKey(campusId, tab));
     if (!raw) return null;
     try {
-    const cached = JSON.parse(raw);
-    if (!cached?.timestamp || !cached?.data) return null;
-    if (Date.now() - cached.timestamp > CACHE_TTL_MS) return null;
-    return cached.data;
+        const cached = JSON.parse(raw);
+        if (!cached?.timestamp || !cached?.data) return null;
+        if (Date.now() - cached.timestamp > CACHE_TTL_MS) return null;
+        return cached.data;
     } catch (e) {
-    return null;
+        return null;
     }
 }
 
-function writeCachedCluster(campusId, tab, data){
+function writeCachedCluster(campusId, tab, data) {
     sessionStorage.setItem(getCacheKey(campusId, tab), JSON.stringify({
-    timestamp: Date.now(),
-    data,
+        timestamp: Date.now(),
+        data,
     }));
 }
 
-function renderClusterData(data, { source } = {}){
-    if (!data?.ok){
-    document.getElementById("updated").textContent = "Bad response";
-    setStatusMsg("Unexpected response from /cluster.");
-    return;
+function renderClusterData(data, { source } = {}) {
+    if (!data?.ok) {
+        document.getElementById("updated").textContent = "Bad response";
+        setStatusMsg("Unexpected response from /cluster.");
+        return;
     }
 
     document.getElementById("occ").textContent = data.stats?.occupied ?? "—";
@@ -446,27 +446,27 @@ function renderClusterData(data, { source } = {}){
     document.getElementById("blocked").textContent = data.stats?.blocked ?? "—";
     const updatedLabel = fmtTime(data.updated_at);
     document.getElementById("updated").textContent =
-    source === "cache" ? `${updatedLabel} (cached)` : updatedLabel;
+        source === "cache" ? `${updatedLabel} (cached)` : updatedLabel;
 
     renderBars(document.getElementById("promoBars"), data.stats?.promo);
     renderBars(document.getElementById("kindBars"), data.stats?.kind);
 
     const zones = Array.isArray(data.zones) ? data.zones : [];
     document.getElementById("zonesDbg").textContent =
-    zones.length ? zones.map(z => z.name).join(",") : "none";
+        zones.length ? zones.map(z => z.name).join(",") : "none";
 
     document.getElementById("rowsDbg").textContent =
-    zones.length ? zones.map(z => `${z.name}:${z.rows?.length ?? 0}`).join(" | ") : "—";
+        zones.length ? zones.map(z => `${z.name}:${z.rows?.length ?? 0}`).join(" | ") : "—";
 
     const map = document.getElementById("mapZones");
     map.innerHTML = "";
 
-    if (!zones.length){
-    setStatusMsg(
-        `Seatmap is empty (seatmap_source=${data.seatmap_source || "—"}).
+    if (!zones.length) {
+        setStatusMsg(
+            `Seatmap is empty (seatmap_source=${data.seatmap_source || "—"}).
         Most likely the Worker hasn't been updated to host-parsing or there are no host-coordinates in the response.`
-    );
-    return;
+        );
+        return;
     }
 
     const visible = filterZonesByTab(zones);
@@ -478,31 +478,31 @@ function renderClusterData(data, { source } = {}){
 }
 
 // === Main load ===
-async function load(){
+async function load() {
     setStatusMsg("");
 
     const session = await getSessionIdFromUrlOrStorage();
-    if (!session){
-    document.getElementById("updated").textContent = "No session";
-    setStatusMsg("No session found.");
-    showSessionModal();
-    return;
+    if (!session) {
+        document.getElementById("updated").textContent = "No session";
+        setStatusMsg("No session found.");
+        showSessionModal();
+        return;
     }
 
     let campus;
     try {
-    campus = await getPrimaryCampus(session);
+        campus = await getPrimaryCampus(session);
     } catch (e) {
-    document.getElementById("updated").textContent = "Session expired";
-    localStorage.removeItem("session");
-    setStatusMsg("Session expired or invalid. Click Login.");
-    return;
+        document.getElementById("updated").textContent = "Session expired";
+        localStorage.removeItem("session");
+        setStatusMsg("Session expired or invalid. Click Login.");
+        return;
     }
 
-    if (!campus?.id){
-    document.getElementById("updated").textContent = "No campus_id";
-    setStatusMsg("Failed to determine campus_id from profile (/v2/me).");
-    return;
+    if (!campus?.id) {
+        document.getElementById("updated").textContent = "No campus_id";
+        setStatusMsg("Failed to determine campus_id from profile (/v2/me).");
+        return;
     }
 
     // document.getElementById("campusId").textContent = String(campusId);
@@ -512,19 +512,19 @@ async function load(){
 
 
     const cached = readCachedCluster(campus.id, activeTab);
-    if (cached){
-    setStatusMsg("Showing cached data… Updating in background.");
-    renderClusterData(cached, { source: "cache" });
+    if (cached) {
+        setStatusMsg("Showing cached data… Updating in background.");
+        renderClusterData(cached, { source: "cache" });
     }
 
     const api = `${WORKER}/cluster?session=${encodeURIComponent(session)}&campus_id=${encodeURIComponent(campus.id)}`;
 
     const res = await fetch(api);
-    if (!res.ok){
-    const text = await res.text().catch(() => "");
-    document.getElementById("updated").textContent = `API error ${res.status}`;
-    setStatusMsg(`Worker /cluster вернул ошибку ${res.status}.\n${text}`);
-    return;
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        document.getElementById("updated").textContent = `API error ${res.status}`;
+        setStatusMsg(`Worker /cluster вернул ошибку ${res.status}.\n${text}`);
+        return;
     }
 
     const data = await res.json();
