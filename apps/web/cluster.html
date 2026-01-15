@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
@@ -7,6 +8,7 @@
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/cluster.css" />
 </head>
+
 <body>
   <div class="wrap">
     <div class="topbar">
@@ -22,50 +24,50 @@
     <div class="grid">
       <!-- LEFT: stats -->
       <div class="card" id="stats">
-      <div class="statistics">
-        <div class="chip">📊 Stats</div>
-        <div style="height:12px;"></div>
+        <div class="statistics">
+          <div class="chip">📊 Stats</div>
+          <div style="height:12px;"></div>
 
-        <div class="statBig">
-          <div>
-            <div class="statLabel">Occupied</div>
-            <div class="statValue" id="occ">—</div>
+          <div class="statBig">
+            <div>
+              <div class="statLabel">Occupied</div>
+              <div class="statValue" id="occ">—</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="statLabel">Free</div>
+              <div class="statValue" id="free">—</div>
+            </div>
           </div>
-          <div style="text-align:right;">
-            <div class="statLabel">Free</div>
-            <div class="statValue" id="free">—</div>
+
+          <div class="row">
+            <span class="chip">🚫 blocked: <span class="mono" id="blocked">—</span></span>
+            <span class="chip">🕒 updated: <span class="mono" id="updated">—</span></span>
           </div>
-        </div>
 
-        <div class="row">
-          <span class="chip">🚫 blocked: <span class="mono" id="blocked">—</span></span>
-          <span class="chip">🕒 updated: <span class="mono" id="updated">—</span></span>
-        </div>
+          <div class="row">
+            <span class="chip">🏫 campus_id: <span class="mono" id="campusId">—</span></span>
+            <span class="chip">🏫 campus: <span class="mono" id="campusName">—</span></span>
+          </div>
 
-        <div class="row">
-          <span class="chip">🏫 campus_id: <span class="mono" id="campusId">—</span></span>
-          <span class="chip">🏫 campus: <span class="mono" id="campusName">—</span></span>
-        </div>
-
-        <div class="row">
+          <div class="row">
             <span class="chip">🧱 zones: <span class="mono" id="zonesDbg">—</span></span>
             <span class="chip">🧩 rows: <span class="mono" id="rowsDbg">—</span></span>
+          </div>
+
+          <div style="height:14px;"></div>
+          <div class="chip">🎓 Promo</div>
+          <div class="barList" id="promoBars"></div>
+
+          <div style="height:14px;"></div>
+          <div class="chip">🎖️ Kind</div>
+          <div class="barList" id="kindBars"></div>
+
+          <div class="row" style="margin-top:14px;">
+            <button class="btn" id="btn-refresh">Refresh</button>
+          </div>
+
+          <div class="msg" id="statusMsg" style="display:none;"></div>
         </div>
-
-        <div style="height:14px;"></div>
-        <div class="chip">🎓 Promo</div>
-        <div class="barList" id="promoBars"></div>
-
-        <div style="height:14px;"></div>
-        <div class="chip">🎖️ Kind</div>
-        <div class="barList" id="kindBars"></div>
-
-        <div class="row" style="margin-top:14px;">
-          <button class="btn" id="btn-refresh">Refresh</button>
-        </div>
-
-        <div class="msg" id="statusMsg" style="display:none;"></div>
-      </div>
       </div>
 
       <!-- RIGHT: map -->
@@ -75,61 +77,63 @@
           <button class="tab" id="tab-disc">Discovery</button>
         </div>
 
-        <!-- динамические зоны -->
+        <!-- dynamic zones -->
         <div class="mapWrap" id="mapZones"></div>
       </div>
     </div>
   </div>
 
-<div class="modalOverlay" id="userModalOverlay" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true">
-    <div class="modalHeader">
-      <div class="modalTitle">Student</div>
-      <button class="modalClose" id="userModalClose">Close</button>
-    </div>
-
-    <div class="modalBody">
-      <div class="modalAvatar">
-        <img id="userModalAvatar" alt="" referrerpolicy="no-referrer" />
+  <div class="modalOverlay" id="userModalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div class="modalTitle">Student</div>
+        <button class="modalClose" id="userModalClose">Close</button>
       </div>
 
-      <div class="modalInfo">
-        <h2 id="userModalName">—</h2>
-        <div class="sub" id="userModalLogin">—</div>
+      <div class="modalBody">
+        <div class="modalAvatar">
+          <img id="userModalAvatar" alt="" referrerpolicy="no-referrer" />
+        </div>
+
+        <div class="modalInfo">
+          <h2 id="userModalName">—</h2>
+          <div class="sub" id="userModalLogin">—</div>
+          <div class="modalActions">
+            <a class="modalLink" id="userModalProfileLink" href="#" target="_blank" rel="noreferrer noopener"
+              aria-disabled="true">
+              🔗 Open Intra profile
+            </a>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <span class="pill">⭐ level: <span class="mono" id="userModalLevel">—</span></span>
+            <span class="pill">🎓 promo: <span class="mono" id="userModalPromo">—</span></span>
+            <span class="pill">🎖️ grade: <span class="mono" id="userModalKind">—</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modalOverlay" id="sessionModalOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modalHeader">
+        <div class="modalTitle">No session</div>
+        <button class="modalClose" id="sessionModalClose">Close</button>
+      </div>
+
+      <div class="modalBody">
+        <div style="font-size:18px; color:var(--muted);">No session found. Please login.</div>
+
         <div class="modalActions">
-          <a class="modalLink" id="userModalProfileLink" href="#" target="_blank" rel="noreferrer noopener" aria-disabled="true">
-            🔗 Open Intra profile
-          </a>
-        </div>
-
-        <div style="display:flex; gap:10px; flex-wrap:wrap;">
-          <span class="pill">⭐ level: <span class="mono" id="userModalLevel">—</span></span>
-          <span class="pill">🎓 promo: <span class="mono" id="userModalPromo">—</span></span>
-          <span class="pill">🎖️ grade: <span class="mono" id="userModalKind">—</span></span>
+          <a class="modalLink" id="sessionModalLogin" href="#">Login</a>
         </div>
       </div>
     </div>
   </div>
-</div>
-
-<div class="modalOverlay" id="sessionModalOverlay" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true">
-    <div class="modalHeader">
-      <div class="modalTitle">No session</div>
-      <button class="modalClose" id="sessionModalClose">Close</button>
-    </div>
-
-    <div class="modalBody">
-      <div style="font-size:18px; color:var(--muted);">No session found. Please login.</div>
-
-      <div class="modalActions">
-        <a class="modalLink" id="sessionModalLogin" href="#">Login</a>
-      </div>
-    </div>
-  </div>
-</div>
 
 
   <script src="js/cluster.js" defer></script>
 </body>
+
 </html>
