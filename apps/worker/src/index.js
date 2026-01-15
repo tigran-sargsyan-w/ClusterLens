@@ -1,12 +1,12 @@
-const SEATMAP_REFRESH_MS = 12 * 60 * 60 * 1000; // 12 часов
-const SEATMAP_LOCK_TTL = 120; // 2 минуты
-const SEATMAP_COOLDOWN_MS = 30 * 60 * 1000; // 30 минут после 429
+const SEATMAP_REFRESH_MS = 12 * 60 * 60 * 1000; // 12 hours
+const SEATMAP_LOCK_TTL = 120; // 2 minutes
+const SEATMAP_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes after 429
 
-const SEATMAP_TTL_SEC = 7 * 24 * 60 * 60;      // 7 дней в KV
+const SEATMAP_TTL_SEC = 7 * 24 * 60 * 60;      // 7 days in KV
 const BUILD_PAGE_SIZE = 100;
-const BUILD_PAGES_PER_CHUNK = 3;               // 3 страницы за один фоновый проход
-const BUILD_LOCK_TTL_SEC = 60;                 // lock на минуту
-const BUILD_COOLDOWN_MS = 10 * 60 * 1000;      // 10 минут после 429
+const BUILD_PAGES_PER_CHUNK = 3;               // 3 pages per single background pass
+const BUILD_LOCK_TTL_SEC = 60;                 // lock for one minute
+const BUILD_COOLDOWN_MS = 10 * 60 * 1000;      // 10 minutes after 429
 
 
 
@@ -15,7 +15,7 @@ export default {
         const url = new URL(request.url);
         const path = url.pathname.replace(/\/+$/, "") || "/";
 
-        // CORS preflight (на будущее)
+        // CORS preflight (for the future)
         if (request.method === "OPTIONS") {
             return new Response(null, {
                 headers: corsHeaders(env),
@@ -59,7 +59,7 @@ function corsHeaders(env) {
 async function handleLogin(url, env) {
     const state = cryptoRandomHex(16);
 
-    // state на 10 минут
+    // state for 10 minutes
     await env.OAUTH.put(`state:${state}`, "1", { expirationTtl: 600 });
 
     const redirectUri = `${url.origin}/callback`;
@@ -79,7 +79,7 @@ async function handleCallback(url, env) {
     if (!code) return new Response("Missing ?code", { status: 400 });
     if (!state) return new Response("Missing ?state", { status: 400 });
 
-    // проверка state
+    // verify state
     const ok = await env.OAUTH.get(`state:${state}`);
     if (!ok) return new Response("Invalid state", { status: 400 });
     await env.OAUTH.delete(`state:${state}`);
@@ -107,13 +107,13 @@ async function handleCallback(url, env) {
     const tokenJson = await tokenRes.json();
     const accessToken = tokenJson.access_token;
 
-    // создаём session и храним 2 часа
+    // create a session and store for 2 hours
     const sessionId = cryptoRandomHex(16);
     await env.OAUTH.put(`sess:${sessionId}`, JSON.stringify({ accessToken }), {
         expirationTtl: 7200,
     });
 
-    // редирект на GitHub Pages
+    // redirect to GitHub Pages
     const front = new URL(env.FRONTEND_URL);
     front.searchParams.set("session", sessionId);
 
@@ -129,7 +129,7 @@ async function handleSession(url, env) {
 
     const { accessToken } = JSON.parse(raw);
 
-    // проверяем пользователя на стороне 42
+    // verify the user on 42's side
     const meRes = await fetch("https://api.intra.42.fr/v2/me", {
         headers: { Authorization: `Bearer ${accessToken}` },
     });
@@ -165,11 +165,11 @@ async function handleCluster(url, env, ctx) {
 
     const { accessToken } = JSON.parse(raw);
 
-    // 1) active locations (быстро)
+    // 1) active locations (fast)
     const activeLocations = await fetchActiveCampusLocations(campusId, accessToken);
     const activeHosts = activeLocations.map(x => x?.host).filter(Boolean);
 
-    // 2) seatmap из KV или временный (из active) + фоновое обновление
+    // 2) seatmap from KV or temporary (from active) + background refresh
     const seatRes = await getSeatmapFast(env, campusId, ctx, accessToken, activeHosts);
     const seatmap = seatRes.seatmap;
 
@@ -177,7 +177,7 @@ async function handleCluster(url, env, ctx) {
     const userIds = [...new Set(activeLocations.map(l => l?.user?.id).filter(Boolean))];
     const usersById = await fetchUsersByIds(userIds, accessToken);
 
-    // 4) occupied map по host
+    // 4) occupied map by host
     const occupied = new Map();
     for (const l of activeLocations) {
         const seat = parseSeatFromHost(l?.host);
@@ -197,11 +197,11 @@ async function handleCluster(url, env, ctx) {
                 kind: u.kind,
                 staff: u["staff?"],
                 alumni: u["alumni?"],
-                // аватар для попапа (большой)
+                // avatar for popup (large)
                 avatar_large: u.image?.versions?.large
                     || u.image?.versions?.medium
                     || u.image?.link,
-                // уровень (может отсутствовать)
+                // level (may be missing)
                 level: (() => {
                     const cu = (Array.isArray(u?.cursus_users) && u.cursus_users.length)
                         ? (
@@ -217,7 +217,7 @@ async function handleCluster(url, env, ctx) {
         });
     }
 
-    // 5) overlay на seatmap
+    // 5) overlay on seatmap
     const zonesOut = (seatmap.zones || []).map(z => ({
         name: z.name,
         rows: (z.rows || []).map(r => ({
@@ -275,7 +275,7 @@ async function handleCluster(url, env, ctx) {
 }
 
 async function handleUser(url, env) {
-    // CORS preflight (если надо)
+    // CORS preflight (if needed)
     // if (url.method === "OPTIONS") return new Response("", { headers: corsHeaders(env) });
 
     const sessionId = url.searchParams.get("session");
@@ -309,7 +309,7 @@ async function handleUser(url, env) {
 
     const payload = {
         ok: true,
-        user: u, // <-- ВЕСЬ объект как от API
+        user: u, // <-- THE WHOLE object as returned by the API
         derived: {
             level42: pickLevel42(u),
             avatar: pickAvatar(u),
@@ -319,7 +319,7 @@ async function handleUser(url, env) {
 
     const out = JSON.stringify(payload);
 
-    // кэш на 5 минут, чтобы не долбить API при кликах
+    // cache for 5 minutes to avoid hammering the API on clicks
     await env.OAUTH.put(cacheKey, out, { expirationTtl: 300 });
 
     return new Response(out, {
@@ -340,8 +340,8 @@ function errKey(campusId) { return `seatmap_build_err:${campusId}`; }
 async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function fetchAllCampusLocations(campusId, accessToken) {
-    // Без filter[active] — чтобы получить и пустые места/геометрию.
-    // Пагинация: page[number]
+    // Without filter[active] — to get empty seats/geometry as well.
+    // Pagination: page[number]
     const pageSize = 100;
     let page = 1;
     const out = [];
@@ -361,7 +361,7 @@ async function fetchAllCampusLocations(campusId, accessToken) {
 
         if (!Array.isArray(chunk) || chunk.length < pageSize) break;
         page++;
-        if (page > 30) break; // защита от бесконечного цикла
+        if (page > 30) break; // protection against infinite loop
     }
 
     return out;
@@ -409,7 +409,7 @@ async function fetchAllCampusHosts(campusId, accessToken) {
         });
 
         if (res.status === 429) {
-            // небольшая пауза и бросаем наверх — включится cooldown
+            // short pause and rethrow — cooldown will be triggered
             await sleep(800);
             throw new Error("fetchAllCampusHosts HTTP 429");
         }
@@ -426,7 +426,7 @@ async function fetchAllCampusHosts(campusId, accessToken) {
         page++;
         if (page > 120) break; // safety
 
-        // пауза между страницами — реально помогает
+        // pause between pages — it really helps
         await sleep(200);
     }
 
@@ -452,7 +452,7 @@ async function fetchUsersByIds(ids, accessToken) {
         if (!res.ok) continue;
         const users = await res.json();
 
-        // Debug: посмотри что приходит
+        // Debug: inspect what comes in
         if (users.length > 0) {
             console.log("Sample user cursus_users:", JSON.stringify(users[0]?.cursus_users));
         }
@@ -465,7 +465,7 @@ async function fetchUsersByIds(ids, accessToken) {
 
 
 function buildSeatmapFromLocations(locations) {
-    // собираем по zone: set(rows), set(posts)
+    // collect by zone: set(rows), set(posts)
     const zoneRows = new Map();   // zone -> Set(row)
     const zonePosts = new Map();  // zone -> Set(post)
 
@@ -488,7 +488,7 @@ function buildSeatmapFromLocations(locations) {
         zonePosts.get(zone).add(p);
     }
 
-    // если почти ничего не заполнено — Variant B не подходит
+    // if almost nothing is filled — Variant B is not suitable
     if (filledCount < 5) {
         return {
             source: "locations:insufficient-floor-row-post",
@@ -502,7 +502,7 @@ function buildSeatmapFromLocations(locations) {
             .map(r => ({ name: r }));
 
         const postsSet = zonePosts.get(zoneName) || new Set();
-        const posts = makeRangeFromSet(postsSet, "desc"); // 8..1 или 5..1
+        const posts = makeRangeFromSet(postsSet, "desc"); // 8..1 or 5..1
 
         return {
             name: zoneName,
@@ -594,16 +594,16 @@ async function getSeatmapCached(env, campusId, accessToken) {
     const prev = prevRaw ? JSON.parse(prevRaw) : null;
 
     const now = Date.now();
-    const TTL_SEATMAP = 7 * 24 * 60 * 60;       // храним в KV 7 дней
-    const REFRESH_MS = 24 * 60 * 60 * 1000;     // обновляем раз в сутки
+    const TTL_SEATMAP = 7 * 24 * 60 * 60;       // store in KV for 7 days
+    const REFRESH_MS = 24 * 60 * 60 * 1000;     // refresh once per day
 
     const hasData = prev?.zones?.length > 0 && prev?.maxima && Object.keys(prev.maxima).length > 0;
     const isFresh = hasData && prev?.generated_at && (now - prev.generated_at) < REFRESH_MS;
 
-    // свежий seatmap — сразу отдаём
+    // fresh seatmap — return immediately
     if (prev && isFresh) return { seatmap: prev, refreshed: false };
 
-    // иначе пробуем обновить из ALL locations
+    // otherwise try to update from ALL locations
     try {
         const hosts = await fetchAllCampusHosts(campusId, accessToken);
         const updated = buildSeatmapFromHosts(hosts, prev);
@@ -613,13 +613,13 @@ async function getSeatmapCached(env, campusId, accessToken) {
         await env.OAUTH.put(key, JSON.stringify(updated), { expirationTtl: TTL_SEATMAP });
         return { seatmap: updated, refreshed: true };
     } catch (e) {
-        // fallback: если есть старый — используем его, чтобы UI не умер
+        // fallback: if there's an old one — use it so the UI doesn't die
         if (prev) {
             prev.source = (prev.source || "host:all-locations") + "|stale-fallback";
             return { seatmap: prev, refreshed: false, error: String(e?.message || e) };
         }
 
-        // fallback 2: если вообще нет — вернём пустой (но это редкий край)
+        // fallback 2: if none at all — return empty (rare edge case)
         return {
             seatmap: { source: "seatmap:none", generated_at: now, maxima: {}, zones: [] },
             refreshed: false,
@@ -642,7 +642,7 @@ async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts
     const hasPrev = prev?.zones?.length > 0 && prev?.maxima && Object.keys(prev.maxima).length > 0;
     const isFresh = hasPrev && prev?.generated_at && (now - prev.generated_at) < SEATMAP_REFRESH_MS;
 
-    // fallback seatmap, чтобы UI работал мгновенно
+    // fallback seatmap so the UI works instantly
     let fallback;
     if (hasPrev) {
         fallback = JSON.parse(JSON.stringify(prev));
@@ -653,10 +653,10 @@ async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts
         fallback.source = (fallback.source || "host:active") + "|fallback";
     }
 
-    // если свежий — отдаём сразу, без refresh
+    // if fresh — return immediately, no refresh
     if (isFresh) return { seatmap: prev, refreshing: false };
 
-    // проверим cooldown (после 429)
+    // check cooldown (after 429)
     const cooldownRaw = await env.OAUTH.get(keyCooldown);
     if (cooldownRaw) {
         const cooldownUntil = Number(cooldownRaw);
@@ -665,7 +665,7 @@ async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts
         }
     }
 
-    // попробуем поставить lock, чтобы не запускать refresh параллельно
+    // try to set a lock to avoid running refresh in parallel
     const lockExists = await env.OAUTH.get(keyLock);
     if (!lockExists && ctx?.waitUntil) {
         await env.OAUTH.put(keyLock, "1", { expirationTtl: SEATMAP_LOCK_TTL });
@@ -673,16 +673,16 @@ async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts
         ctx.waitUntil(
             refreshSeatmapInBackground(env, campusId, accessToken, prev)
                 .catch(async (e) => {
-                    // если 429 — выставим cooldown
+                    // if 429 — set cooldown
                     const msg = String(e?.message || e);
                     if (msg.includes("HTTP 429")) {
                         await env.OAUTH.put(keyCooldown, String(now + SEATMAP_COOLDOWN_MS), { expirationTtl: Math.ceil(SEATMAP_COOLDOWN_MS / 1000) });
                     }
-                    // запишем ошибку (у тебя уже есть логирование)
+                    // record the error (you already have logging)
                     await env.OAUTH.put(keyErr, JSON.stringify({ at: new Date().toISOString(), error: msg }), { expirationTtl: 3600 });
                 })
                 .finally(async () => {
-                    // lock сам истечёт по TTL, но можно удалить сразу
+                    // lock will expire by TTL, but we can delete it immediately
                     await env.OAUTH.delete(keyLock);
                 })
         );
@@ -690,7 +690,7 @@ async function getSeatmapCachedFast(env, campusId, accessToken, ctx, activeHosts
         return { seatmap: fallback, refreshing: true };
     }
 
-    // refresh уже идёт или ctx нет
+    // refresh is already running or ctx is missing
     return { seatmap: fallback, refreshing: false };
 }
 
@@ -703,25 +703,25 @@ async function getSeatmapFast(env, campusId, ctx, accessToken, activeHosts) {
     const hasPrev = prev?.zones?.length > 0 && prev?.maxima && Object.keys(prev.maxima).length > 0;
     const isFresh = hasPrev && prev?.generated_at && (now - prev.generated_at) < SEATMAP_REFRESH_MS;
 
-    // fallback — чтобы UI работал всегда
+    // fallback — so the UI always works
     const fallback = hasPrev
         ? (() => { const x = JSON.parse(JSON.stringify(prev)); x.source = (x.source || "seatmap") + "|kv"; return x; })()
         : (() => { const x = buildSeatmapFromHosts(activeHosts, null); x.generated_at = now; x.source = "host:active|fallback"; return x; })();
 
-    // если свежий — всё, ничего не строим
+    // if fresh — nothing to build
     if (isFresh) return { seatmap: prev, building: false };
 
-    // если cooldown — не строим сейчас
+    // if cooldown — don't build now
     const cd = await env.OAUTH.get(cooldownKey(campusId));
     if (cd && now < Number(cd)) {
         return { seatmap: fallback, building: false, error: "cooldown" };
     }
 
-    // если lock — другой билд уже идёт
+    // if lock — another build is running
     const lock = await env.OAUTH.get(lockKey(campusId));
     if (lock) return { seatmap: fallback, building: false, error: "locked" };
 
-    // запускаем фоновый chunk-build (не блокируем ответ)
+    // start a background chunk-build (do not block the response)
     if (ctx?.waitUntil) {
         await env.OAUTH.put(lockKey(campusId), "1", { expirationTtl: BUILD_LOCK_TTL_SEC });
         ctx.waitUntil(buildSeatmapChunk(env, campusId, accessToken).finally(async () => {
@@ -737,11 +737,11 @@ async function buildSeatmapChunk(env, campusId, accessToken) {
     const now = Date.now();
 
     try {
-        // где остановились
+        // where we left off
         const curRaw = await env.OAUTH.get(cursorKey(campusId));
         let page = curRaw ? Number(curRaw) : 1;
 
-        // текущий seatmap из KV (для maxima)
+        // current seatmap from KV (for maxima)
         const prevRaw = await env.OAUTH.get(seatmapKey(campusId));
         const prev = prevRaw ? JSON.parse(prevRaw) : null;
 
@@ -756,7 +756,7 @@ async function buildSeatmapChunk(env, campusId, accessToken) {
             const res = await fetch(u.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
 
             if (res.status === 429) {
-                // cooldown и выходим
+                // cooldown and exit
                 await env.OAUTH.put(cooldownKey(campusId), String(now + BUILD_COOLDOWN_MS), {
                     expirationTtl: Math.ceil(BUILD_COOLDOWN_MS / 1000),
                 });
@@ -773,11 +773,11 @@ async function buildSeatmapChunk(env, campusId, accessToken) {
             }
 
             page++;
-            // маленькая пауза — реально уменьшает 429
+            // small pause — really reduces 429
             await new Promise(r => setTimeout(r, 200));
         }
 
-        // обновляем seatmap по этой пачке
+        // update seatmap from this batch
         const updated = buildSeatmapFromHosts(hostsBatch, prev);
         updated.source = "host:incremental";
         updated.generated_at = now;
@@ -813,7 +813,7 @@ async function refreshSeatmapInBackground(env, campusId, accessToken, prev) {
         updated.source = "host:all-locations";
 
         await env.OAUTH.put(key, JSON.stringify(updated), { expirationTtl: TTL_SEATMAP });
-        await env.OAUTH.delete(keyErr); // очистим ошибку если всё ок
+        await env.OAUTH.delete(keyErr); // clear error if all OK
     } catch (e) {
         const payload = {
             at: new Date().toISOString(),
@@ -908,7 +908,7 @@ async function debugSeatmap(url, env) {
         rowsByZone[z.name] = z.rows?.length ?? 0;
     }
 
-    // максимум для проверки Z3
+    // maxima for checking Z3
     const maxima = seatmap.maxima || {};
     return Response.json({
         ok: true,
@@ -950,7 +950,7 @@ async function debugHostsPage(url, env) {
 
     const res = await fetch(u.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
 
-    // Важно: если 429 — покажем это явно
+    // Important: if 429 — show this explicitly
     if (!res.ok) {
         const ra = res.headers.get("retry-after");
         return Response.json({
@@ -972,7 +972,7 @@ async function debugHostsPage(url, env) {
         if (!parseSeatFromHost(h)) unparsed.push(h);
     }
 
-    // немного статистики по максимальным рядам/постам на этой странице
+    // some statistics for max rows/posts on this page
     const pageMax = {};
     for (const h of hosts) {
         const s = parseSeatFromHost(h);
@@ -990,7 +990,7 @@ async function debugHostsPage(url, env) {
         page,
         size,
         count: chunk.length,
-        done: chunk.length < size,         // если меньше size — это последняя страница
+        done: chunk.length < size,         // if less than size — this is the last page
         hosts,
         unparsed_sample: unparsed.slice(0, 50),
         pageMax,
@@ -1000,7 +1000,7 @@ async function debugHostsPage(url, env) {
 async function debugBuildSeatmap(url, env) {
     const sessionId = url.searchParams.get("session");
     const campusId = url.searchParams.get("campus_id");
-    const pages = Number(url.searchParams.get("pages") || "3"); // сколько страниц за один вызов
+    const pages = Number(url.searchParams.get("pages") || "3"); // how many pages per single call
     const size = Number(url.searchParams.get("size") || "100");
 
     if (!sessionId || !campusId) return new Response("need session & campus_id", { status: 400 });
@@ -1023,7 +1023,7 @@ async function debugBuildSeatmap(url, env) {
     let totalHosts = 0;
     let hit429 = false;
 
-    // накопим hosts пачками
+    // accumulate hosts in batches
     const hostsBatch = [];
 
     for (let i = 0; i < pages; i++) {
@@ -1052,11 +1052,11 @@ async function debugBuildSeatmap(url, env) {
         }
 
         page++;
-        // лёгкая пауза, чтобы не ловить лимит
+        // light pause to avoid hitting the rate limit
         await new Promise(r => setTimeout(r, 200));
     }
 
-    // обновляем seatmap по этой пачке 
+    // update seatmap from this batch
     const updated = buildSeatmapFromHosts(hostsBatch, prev);
     updated.source = "host:incremental";
     updated.generated_at = Date.now();
@@ -1067,7 +1067,7 @@ async function debugBuildSeatmap(url, env) {
     if (done) {
         await env.OAUTH.delete(cursorKey);
     } else {
-        // если упёрлись в 429 — не двигаем курсор
+        // if we hit 429 — do not advance the cursor
         if (!hit429) await env.OAUTH.put(cursorKey, String(page), { expirationTtl: 3600 });
     }
 
